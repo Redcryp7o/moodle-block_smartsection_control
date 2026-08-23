@@ -19,7 +19,7 @@ declare(strict_types=1);
  * Event observer for the SmartSection Control block.
  *
  * Listens for activity completion events and writes per-student pacing unlock
- * timestamps to block_smartsection_user_unlocks, enabling personal velocity-based
+ * timestamps to block_smartsection_control_u, enabling personal velocity-based
  * content release.
  *
  * @package    block_smartsection_control
@@ -105,7 +105,7 @@ class observer {
             $pacingdays = isset($conditions['pacing_delay_days']) ? (int) $conditions['pacing_delay_days'] : 0;
             $unlocktime = time() + ($pacingdays * DAYSECS);
 
-            $userunlock = $DB->get_record('block_smartsection_user_unlocks', [
+            $userunlock = $DB->get_record('block_smartsection_control_u', [
                 'userid'    => $userid,
                 'sectionid' => (int) $record->sectionid,
             ]);
@@ -113,9 +113,9 @@ class observer {
             if ($userunlock) {
                 // Keep the earlier unlock time if triggered more than once.
                 $userunlock->unlocktime = min((int) $userunlock->unlocktime, $unlocktime);
-                $DB->update_record('block_smartsection_user_unlocks', $userunlock);
+                $DB->update_record('block_smartsection_control_u', $userunlock);
             } else {
-                $DB->insert_record('block_smartsection_user_unlocks', (object) [
+                $DB->insert_record('block_smartsection_control_u', (object) [
                     'userid'      => $userid,
                     'sectionid'   => (int) $record->sectionid,
                     'courseid'    => (int) $cm->course,

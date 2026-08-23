@@ -347,26 +347,26 @@ function block_smartsection_control_check_sections_visibility(): array {
     }
 
     $stats['orphaned_history'] = (int) $DB->count_records_sql(
-        "SELECT COUNT(*) FROM {block_smartsection_control_history}
+        "SELECT COUNT(*) FROM {block_smartsection_control_h}
           WHERE courseid NOT IN (SELECT id FROM {course})
              OR sectionid NOT IN (SELECT id FROM {course_sections})"
     );
     if ($stats['orphaned_history'] > 0) {
         $DB->execute("
-            DELETE FROM {block_smartsection_control_history}
+            DELETE FROM {block_smartsection_control_h}
              WHERE courseid NOT IN (SELECT id FROM {course})
                 OR sectionid NOT IN (SELECT id FROM {course_sections})
         ");
     }
 
     $stats['orphaned_pacing'] = (int) $DB->count_records_sql(
-        "SELECT COUNT(*) FROM {block_smartsection_user_unlocks}
+        "SELECT COUNT(*) FROM {block_smartsection_control_u}
           WHERE courseid NOT IN (SELECT id FROM {course})
              OR sectionid NOT IN (SELECT id FROM {course_sections})"
     );
     if ($stats['orphaned_pacing'] > 0) {
         $DB->execute("
-            DELETE FROM {block_smartsection_user_unlocks}
+            DELETE FROM {block_smartsection_control_u}
              WHERE courseid NOT IN (SELECT id FROM {course})
                 OR sectionid NOT IN (SELECT id FROM {course_sections})
         ");
@@ -586,7 +586,7 @@ function block_smartsection_control_reset_course_userdata(stdClass $data): array
     $status = [];
 
     if (!empty($data->reset_smartsection_history)) {
-        $DB->delete_records('block_smartsection_control_history', ['courseid' => $data->courseid]);
+        $DB->delete_records('block_smartsection_control_h', ['courseid' => $data->courseid]);
         $status[] = [
             'component' => get_string('pluginname', 'block_smartsection_control'),
             'item'      => get_string('reset_history', 'block_smartsection_control'),
@@ -595,7 +595,7 @@ function block_smartsection_control_reset_course_userdata(stdClass $data): array
     }
 
     if (!empty($data->reset_smartsection_pacing)) {
-        $DB->delete_records('block_smartsection_user_unlocks', ['courseid' => $data->courseid]);
+        $DB->delete_records('block_smartsection_control_u', ['courseid' => $data->courseid]);
         $status[] = [
             'component' => get_string('pluginname', 'block_smartsection_control'),
             'item'      => get_string('reset_pacing', 'block_smartsection_control'),

@@ -32,7 +32,7 @@ $page = optional_param('page', 0, PARAM_INT);
 $perpage = 50;
 
 $historyquery = \block_smartsection_control\helper::get_history_list_sql($courseid);
-$total = $DB->count_records('block_smartsection_control_history', ['courseid' => $courseid]);
+$total = $DB->count_records('block_smartsection_control_h', ['courseid' => $courseid]);
 $history = $DB->get_records_sql(
     $historyquery['sql'],
     $historyquery['params'],

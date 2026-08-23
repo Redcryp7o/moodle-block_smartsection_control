@@ -173,7 +173,7 @@ class dashboard_widget implements \renderable, \templatable {
             return;
         }
 
-        $sql = "SELECT * FROM {block_smartsection_control_history}
+        $sql = "SELECT * FROM {block_smartsection_control_h}
                  WHERE courseid    = :courseid
                    AND trigger_type = 'cron'
               ORDER BY timecreated DESC";
@@ -329,7 +329,7 @@ class dashboard_widget implements \renderable, \templatable {
         }
 
         if (!is_string($name) || trim($name) === '') {
-            return 'Section ' . $number;
+            return get_string('sectionname', 'block_smartsection_control') . ' ' . $number;
         }
 
         return (string) $name;

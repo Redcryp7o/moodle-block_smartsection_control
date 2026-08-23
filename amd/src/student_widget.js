@@ -268,8 +268,9 @@ define([], function() {
 
             // Announce to screen readers.
             var nameEl = li.querySelector('.ssc-upcoming__section-name');
+            var availableLabel = container.getAttribute('data-available-label') || 'Available now';
             if (announceEl && nameEl) {
-                announceEl.textContent = nameEl.textContent + ' is now available.';
+                announceEl.textContent = nameEl.textContent + ' — ' + availableLabel;
             }
 
             li.classList.add('ssc-upcoming__item--exiting');

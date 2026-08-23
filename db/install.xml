@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="blocks/smartsection_control/db" VERSION="20260711" COMMENT="XMLDB file for Moodle blocks/smartsection_control component"
+<XMLDB PATH="blocks/smartsection_control/db" VERSION="20260823" COMMENT="XMLDB file for Moodle blocks/smartsection_control component"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -29,7 +29,7 @@
         <INDEX NAME="idx_unlocktime" UNIQUE="false" FIELDS="unlocktime" COMMENT="Efficient cron queries by unlock time"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="block_smartsection_control_history" COMMENT="Audit log of all section lock and unlock state transitions">
+    <TABLE NAME="block_smartsection_control_h" COMMENT="Audit log of all section lock and unlock state transitions">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
@@ -51,7 +51,7 @@
         <INDEX NAME="idx_timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="block_smartsection_user_unlocks" COMMENT="Per-student personal pacing unlock timestamps">
+    <TABLE NAME="block_smartsection_control_u" COMMENT="Per-student personal pacing unlock timestamps">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>

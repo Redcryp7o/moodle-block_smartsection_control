@@ -156,7 +156,7 @@ Release metadata:
 
 ```php
 $plugin->component = 'block_smartsection_control';
-$plugin->version = 2026071226;
+$plugin->version = 2026082301;
 $plugin->requires = 2026042000;
 $plugin->supported = [502, 502];
 $plugin->maturity = MATURITY_STABLE;
@@ -252,10 +252,10 @@ The plugin creates three tables. Names below are shown **without the site-specif
 1. **`block_smartsection_control`**  
    Stores section release rules, unlock times, lock modes, relative scheduling settings, and trigger conditions.
 
-2. **`block_smartsection_control_history`**  
+2. **`block_smartsection_control_h`**  
    Stores audit history for scheduling actions, manual releases, and automated state changes.
 
-3. **`block_smartsection_user_unlocks`**  
+3. **`block_smartsection_control_u`**  
    Stores learner-specific pacing unlock timestamps for completion-based release workflows.
 
 ---
@@ -305,24 +305,16 @@ blocks/smartsection_control/
 ├── pix/
 │   ├── icon.png
 │   └── sectionrelease.svg
+├── scripts/
+│   └── build_marketplace_zip.ps1
 ├── templates/
 │   ├── student_timeline.mustache
 │   └── teacher_block.mustache
-├── tests/
-│   ├── behat/
-│   │   └── manage_schedule.feature
-│   ├── availability_merge_test.php
-│   ├── backup_restore_test.php
-│   ├── bulk_post_policy_test.php
-│   ├── delay_token_test.php
-│   ├── helper_remap_test.php
-│   ├── history_query_test.php
-│   ├── manual_unlock_test.php
-│   └── section_id_normalize_test.php
 ├── block_smartsection_control.php
 ├── history.php
 ├── lib.php
 ├── manage.php
+├── MARKETPLACE_LISTING.md
 ├── settings.php
 ├── styles.css
 ├── timeline.php

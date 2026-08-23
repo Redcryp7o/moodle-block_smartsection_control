@@ -158,7 +158,7 @@ class helper {
             'timecreated'  => time(),
         ];
 
-        return $DB->insert_record('block_smartsection_control_history', $record) !== false;
+        return $DB->insert_record('block_smartsection_control_h', $record) !== false;
     }
 
     /**
@@ -570,7 +570,7 @@ class helper {
     public static function check_user_pacing_unlock(int $userid, int $sectionid): int|false {
         global $DB;
 
-        $record = $DB->get_record('block_smartsection_user_unlocks', [
+        $record = $DB->get_record('block_smartsection_control_u', [
             'userid'    => $userid,
             'sectionid' => $sectionid,
         ]);
@@ -941,7 +941,7 @@ class helper {
 
         $sql = "SELECT h.*, cs.section, cs.name AS sectionname
                        {$userfieldsql->selects}
-                  FROM {block_smartsection_control_history} h
+                  FROM {block_smartsection_control_h} h
                   JOIN {course_sections} cs ON cs.id = h.sectionid
              LEFT JOIN {user} u ON u.id = h.triggered_by AND u.deleted = 0
                        {$userfieldsql->joins}

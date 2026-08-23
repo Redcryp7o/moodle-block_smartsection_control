@@ -254,9 +254,9 @@ class block_smartsection_control extends block_base {
                     $locktype
                 );
             }
-            $DB->delete_records('block_smartsection_control',         ['courseid' => $courseid]);
-            $DB->delete_records('block_smartsection_control_history', ['courseid' => $courseid]);
-            $DB->delete_records('block_smartsection_user_unlocks',    ['courseid' => $courseid]);
+            $DB->delete_records('block_smartsection_control',   ['courseid' => $courseid]);
+            $DB->delete_records('block_smartsection_control_h', ['courseid' => $courseid]);
+            $DB->delete_records('block_smartsection_control_u', ['courseid' => $courseid]);
             rebuild_course_cache($courseid, true);
         }
 

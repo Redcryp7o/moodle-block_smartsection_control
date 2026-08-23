@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component    = 'block_smartsection_control';
-$plugin->version      = 2026071226;
+$plugin->version      = 2026082301;
 $plugin->requires     = 2026042000;   // Moodle 5.2+.
 $plugin->supported    = [502, 502];
 $plugin->maturity     = MATURITY_STABLE;

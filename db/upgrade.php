@@ -306,5 +306,24 @@ function xmldb_block_smartsection_control_upgrade(int $oldversion): bool {
         upgrade_block_savepoint(true, 2026071222, 'smartsection_control');
     }
 
+    // -----------------------------------------------------------------------
+    // Version 2026082301 — Marketplace XMLDB table prefix compliance.
+    // Rename block_smartsection_control_history -> block_smartsection_control_h
+    // Rename block_smartsection_user_unlocks -> block_smartsection_control_u
+    // -----------------------------------------------------------------------
+    if ($oldversion < 2026082301) {
+        $tablehist = new xmldb_table('block_smartsection_control_history');
+        if ($dbman->table_exists($tablehist)) {
+            $dbman->rename_table($tablehist, 'block_smartsection_control_h');
+        }
+
+        $tableuser = new xmldb_table('block_smartsection_user_unlocks');
+        if ($dbman->table_exists($tableuser)) {
+            $dbman->rename_table($tableuser, 'block_smartsection_control_u');
+        }
+
+        upgrade_block_savepoint(true, 2026082301, 'smartsection_control');
+    }
+
     return true;
 }

@@ -210,7 +210,7 @@ class send_notifications extends \core\task\scheduled_task {
         if ($haswarning) {
             $plainbody .= $warningtext . "\n\n";
         }
-        $plainbody .= "Delay this section unlock:\n";
+        $plainbody .= get_string('delay_section_unlock', 'block_smartsection_control') . "\n";
         for ($days = 1; $days <= 3; $days++) {
             $plainbody .= '- ' . get_string('delay_x_days', 'block_smartsection_control', $days) . ': ' . $delayurls[$days] . "\n";
         }
@@ -227,7 +227,7 @@ class send_notifications extends \core\task\scheduled_task {
         }
 
         $htmlbody .= '<div style="margin:25px 0 10px 0;border-top:1px solid #e0e0e0;padding-top:20px;">';
-        $htmlbody .= '<p style="color:#5f6368;font-weight:bold;margin-bottom:15px;">Delay Section Unlock:</p>';
+        $htmlbody .= '<p style="color:#5f6368;font-weight:bold;margin-bottom:15px;">' . s(get_string('delay_section_unlock', 'block_smartsection_control')) . '</p>';
         $htmlbody .= '<div style="display:flex;gap:10px;">';
         for ($days = 1; $days <= 3; $days++) {
             $label     = get_string('delay_x_days', 'block_smartsection_control', $days);
