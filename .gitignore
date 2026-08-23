@@ -1,0 +1,38 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.cursor/
+*.code-workspace
+
+# Secrets / local env
+.github
+.env
+.env.*
+*.pem
+credentials.json
+
+# Dependencies / build junk
+node_modules/
+vendor/
+coverage/
+.phpunit.result.cache
+composer.lock
+
+# Packaging output (rebuild with scripts/build_marketplace_zip.ps1)
+dist/
+*.zip
+
+scripts/
+
+# Logs / temp
+*.log
+*.tmp
+*.bak
+*.old
+*.orig

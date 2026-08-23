@@ -1,0 +1,34 @@
+<div class="block_smartsection_control teacher-block">
+    <div class="stats-grid mb-3">
+        <div class="stat-item">
+            <div class="stat-value">{{stats.total}}</div>
+            <div class="stat-label">{{#str}}total_sections, block_smartsection_control{{/str}}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value stat-unlocked">{{stats.unlocked}}</div>
+            <div class="stat-label">{{#str}}unlocked_sections, block_smartsection_control{{/str}}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value stat-scheduled">{{stats.scheduled}}</div>
+            <div class="stat-label">{{#str}}scheduled_sections, block_smartsection_control{{/str}}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value stat-locked">{{stats.locked}}</div>
+            <div class="stat-label">{{#str}}locked_sections, block_smartsection_control{{/str}}</div>
+        </div>
+    </div>
+    <div class="quick-actions">
+        <a href="{{manageurl}}" class="btn btn-primary w-100">
+            <i class="fa fa-cog me-1"></i>
+            {{#str}}manage_unlocks, block_smartsection_control{{/str}}
+        </a>
+        <a href="{{timelineurl}}" class="btn btn-secondary w-100">
+            <i class="fa fa-calendar me-1"></i>
+            {{#str}}timeline_view, block_smartsection_control{{/str}}
+        </a>
+        <a href="{{historyurl}}" class="btn btn-secondary w-100">
+            <i class="fa fa-clock-rotate-left me-1"></i>
+            {{#str}}history_view, block_smartsection_control{{/str}}
+        </a>
+    </div>
+</div>

@@ -1,0 +1,87 @@
+{{!
+    Student-facing Upcoming Releases widget for block_smartsection_control.
+
+    Premium compact release-tracker: shows the next 1–3 future scheduled
+    sections. Live countdown timers are driven by student_widget AMD module.
+    The Moodle block heading already renders "SmartSection Control", so this
+    template begins directly with the widget heading.
+
+    @package    block_smartsection_control
+    @copyright  2026 M. AFZAL RIAZ
+    @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+<div class="ssc-upcoming"
+     id="{{uniqid}}"
+     data-queued="{{{queued_json}}}"
+     data-next-label="{{nextlabel}}"
+     data-unlocks-in-label="{{unlocksinlabel}}"
+     role="region"
+     aria-label="{{#str}}upcoming_unlocks, block_smartsection_control{{/str}}">
+
+    {{! ── Widget header ── }}
+    <div class="ssc-upcoming__header">
+        <div class="ssc-upcoming__title-row">
+            <h3 class="ssc-upcoming__title">{{#str}}upcoming_unlocks, block_smartsection_control{{/str}}</h3>
+            {{#hasupcoming}}
+            <span class="ssc-upcoming__count" aria-hidden="true">{{upcomingcount}}</span>
+            {{/hasupcoming}}
+        </div>
+        <p class="ssc-upcoming__subtitle">{{#str}}next_scheduled_sections, block_smartsection_control{{/str}}</p>
+    </div>
+
+    {{! ── Release cards ── }}
+    {{#hasupcoming}}
+    <ol class="ssc-upcoming__list" role="list">
+        {{#upcoming}}
+        <li class="ssc-upcoming__item{{#isimminent}} ssc-upcoming__item--next{{/isimminent}}{{#issoon}} ssc-upcoming__item--soon{{/issoon}}"
+            data-sectionid="{{sectionid}}"
+            role="listitem">
+
+            {{! Top row: title + NEXT badge }}
+            <div class="ssc-upcoming__row ssc-upcoming__row--title">
+                <span class="ssc-upcoming__section-name">{{sectionname}}</span>
+                {{#isimminent}}
+                <span class="ssc-upcoming__next-badge" aria-label="{{nextlabel}}">{{nextlabel}}</span>
+                {{/isimminent}}
+            </div>
+
+            {{! Date row }}
+            <div class="ssc-upcoming__row ssc-upcoming__row--date">
+                <i class="fa fa-calendar-o ssc-upcoming__icon" aria-hidden="true"></i>
+                <span class="ssc-upcoming__date">{{unlocktimeformatted}}</span>
+            </div>
+
+            {{! Countdown row }}
+            <div class="ssc-upcoming__countdown"
+                 aria-label="{{unlocksinlabel}}: {{countdowndisplay}}">
+                <i class="fa fa-clock-o ssc-upcoming__icon ssc-upcoming__icon--clock" aria-hidden="true"></i>
+                <span class="ssc-upcoming__timer"
+                      data-unlocktime="{{rawunlocktime}}"
+                      data-issoon="{{issoon}}">{{countdowndisplay}}</span>
+            </div>
+
+        </li>
+        {{/upcoming}}
+    </ol>
+    {{/hasupcoming}}
+
+    {{! ── Empty state ── }}
+    <div class="ssc-upcoming__empty{{#hasupcoming}} ssc-upcoming__empty--hidden{{/hasupcoming}}"
+         aria-live="polite">
+        <span class="ssc-upcoming__empty-icon" aria-hidden="true">
+            <i class="fa fa-check-circle"></i>
+        </span>
+        <p class="ssc-upcoming__empty-title">{{#str}}all_caught_up, block_smartsection_control{{/str}}</p>
+        <p class="ssc-upcoming__empty-desc">{{#str}}no_upcoming_unlocks, block_smartsection_control{{/str}}</p>
+    </div>
+
+    {{! Accessible live announcement region — only spoken on meaningful transitions }}
+    <span class="ssc-upcoming__announce sr-only" aria-live="polite" aria-atomic="true"></span>
+
+</div>
+
+{{#js}}
+require(['block_smartsection_control/student_widget'], function(W) {
+    W.init('{{uniqid}}');
+});
+{{/js}}

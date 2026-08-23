@@ -1,0 +1,24 @@
+* text=auto eol=lf
+*.php text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.mustache text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+
+# Internal audit / staging reports — keep in git, exclude from release archives.
+FINAL_*_REPORT.md export-ignore
+FINAL_*_AUDIT.md export-ignore
+PREMIUM_UI_FINAL_REPORT.md export-ignore
+MARKETPLACE_UI_SIMPLIFICATION_REPORT.md export-ignore
+STAGING_*.md export-ignore
+CURRENT_REQUIREMENTS_MATRIX.md export-ignore
+EXECUTED_CERTIFICATION_ATTEMPT.md export-ignore
+MARKETPLACE_LISTING.md export-ignore
+scripts/ export-ignore

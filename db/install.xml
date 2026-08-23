@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="blocks/smartsection_control/db" VERSION="20260711" COMMENT="XMLDB file for Moodle blocks/smartsection_control component"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="block_smartsection_control" COMMENT="Stores unlock configuration for each managed course section">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Foreign key to course.id"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Foreign key to course_sections.id; unique per section"/>
+        <FIELD NAME="unlocktime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Unix timestamp of scheduled unlock; 0 means not set"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="unlocktype" TYPE="char" LENGTH="20" NOTNULL="false" COMMENT="absolute|relative|event|manual"/>
+        <FIELD NAME="relativesettings" TYPE="text" NOTNULL="false" COMMENT="JSON: {days_after_start:N} or {days_after_prev_section:N}"/>
+        <FIELD NAME="eventconditions" TYPE="text" NOTNULL="false" COMMENT="JSON: {activity_completion:cmid, pacing_delay_days:N, grade_threshold:{cmid,minimum}}"/>
+        <FIELD NAME="manualoverride" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" COMMENT="1 = instructor has manually unlocked this section"/>
+        <FIELD NAME="timezone" TYPE="char" LENGTH="50" NOTNULL="false" DEFAULT="server" COMMENT="server|course — reserved for future per-course timezone support"/>
+        <FIELD NAME="locktype" TYPE="char" LENGTH="20" NOTNULL="false" DEFAULT="hard" COMMENT="hard = hidden; soft = visible but disabled (teaser mode)"/>
+        <FIELD NAME="notifysentfor" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Unlocktime for which the upcoming-release notification was already sent"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sectionid_unique" TYPE="unique" FIELDS="sectionid" COMMENT="One configuration record per course section"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_courseid" UNIQUE="false" FIELDS="courseid" COMMENT="Efficient course-level lookups"/>
+        <INDEX NAME="idx_unlocktime" UNIQUE="false" FIELDS="unlocktime" COMMENT="Efficient cron queries by unlock time"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="block_smartsection_control_history" COMMENT="Audit log of all section lock and unlock state transitions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="action" TYPE="char" LENGTH="50" NOTNULL="false" COMMENT="locked|unlocked|updated"/>
+        <FIELD NAME="trigger_type" TYPE="char" LENGTH="50" NOTNULL="false" COMMENT="cron|manual|event|relative|runtime_check|pacing_guard"/>
+        <FIELD NAME="triggered_by" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="User ID of the actor; NULL for automated triggers"/>
+        <FIELD NAME="old_state" TYPE="char" LENGTH="20" NOTNULL="false"/>
+        <FIELD NAME="new_state" TYPE="char" LENGTH="20" NOTNULL="false"/>
+        <FIELD NAME="metadata" TYPE="text" NOTNULL="false" COMMENT="JSON blob for additional context"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_sectionid" UNIQUE="false" FIELDS="sectionid"/>
+        <INDEX NAME="idx_courseid" UNIQUE="false" FIELDS="courseid"/>
+        <INDEX NAME="idx_timecreated" UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="block_smartsection_user_unlocks" COMMENT="Per-student personal pacing unlock timestamps">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="unlocktime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Calculated personal unlock timestamp for this student"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_userid_section" UNIQUE="true" FIELDS="userid, sectionid" COMMENT="Unique user-section pair; enforces one pacing record per student per section"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
