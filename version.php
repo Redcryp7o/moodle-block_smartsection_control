@@ -18,7 +18,7 @@
  * Version metadata for the SmartSection Control block plugin.
  *
  * @package    block_smartsection_control
- * @copyright  2026 EncryptEdge Labs
+ * @copyright  2026 M. AFZAL RIAZ
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

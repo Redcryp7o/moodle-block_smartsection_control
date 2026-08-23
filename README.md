@@ -262,5 +262,5 @@ When uninstalled via **Site administration $\rightarrow$ Plugins $\rightarrow$ P
 ## License & Support
 
 * **License:** [GNU General Public License v3.0 or later](http://www.gnu.org/copyleft/gpl.html)
-* **Author / Maintainer:** EncryptEdge Labs
+* **Author / Maintainer:** M. AFZAL RIAZ
 * **Target Environment:** Moodle 5.2 (LMS)

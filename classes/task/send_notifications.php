@@ -23,7 +23,7 @@ declare(strict_types=1);
  * a rich HTML email to all course instructors with optional delay-link buttons.
  *
  * @package    block_smartsection_control
- * @copyright  2026 EncryptEdge Labs
+ * @copyright  2026 M. AFZAL RIAZ
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
