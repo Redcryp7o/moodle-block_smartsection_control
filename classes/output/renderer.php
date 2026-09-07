@@ -40,7 +40,7 @@ class renderer extends \plugin_renderer_base {
     /**
      * Render the teacher/manager dashboard block content.
      *
-     * @param array<string,mixed> $data Template context data (coursename, courseid, stats, manageurl, etc.).
+     * @param array $data Template context data (coursename, courseid, stats, manageurl, etc.).
      * @return string Rendered HTML string.
      */
     public function render_teacher_block(array $data): string {

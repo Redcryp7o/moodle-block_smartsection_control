@@ -39,11 +39,13 @@ declare(strict_types=1);
  * existing Moodle availability JSON (never wiping teacher-authored rules), and
  * optionally injects teaser CSS on web requests.
  *
- * @param int           $courseid    The course ID.
- * @param \section_info $sectioninfo Section from get_fast_modinfo().
- * @param stdClass      $record      The block_smartsection_control configuration record.
- * @param bool          $visible     Whether the section should currently be visible/unlocked.
- * @param int           $userid      The user ID performing or triggering the action.
+ * @param int           $courseid     The course ID.
+ * @param \section_info $sectioninfo  Section from get_fast_modinfo().
+ * @param stdClass      $record       The block_smartsection_control configuration record.
+ * @param bool          $visible      Whether the section should currently be visible/unlocked.
+ * @param int           $userid       The user ID performing or triggering the action.
+ * @param bool          $rebuildcache Whether to rebuild the course cache after a change.
+ * @return bool True when the lock state was changed.
  */
 function block_smartsection_control_enforce_lock_state(
     int $courseid,
