@@ -1,0 +1,327 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_smartsection_control/manage_page
+
+    Manage page: per-section release schedule editor plus bulk operations.
+
+    Field names must stay in sync with the request handling in manage.php.
+
+    Context variables required for this template:
+    * tabs - tab descriptors consumed by the nav_tabs partial (see that template)
+    * needsreviewnotification - rendered core notification, empty when not needed
+    * formaction - URL the Save form posts to
+    * courseid - course id submitted as the "id" field
+    * sesskey - current session key
+    * stats - total/scheduled/locked pill labels
+    * sections - per-section rows, see the example context below
+    * unlockforms - hidden companion forms for the per-section Release now buttons
+    * bulk - context for the manage_bulk partial
+    * str - localised labels shared by every section row
+
+    Example context (json):
+    {
+        "needsreviewnotification": "",
+        "formaction": "https://example.com/manage.php?id=2",
+        "courseid": 2,
+        "sesskey": "abc123",
+        "stats": {
+            "total": "12 Total sections",
+            "scheduled": "4 Scheduled",
+            "locked": "3 Restricted"
+        },
+        "sections": [
+            {
+                "sectionid": 45,
+                "configured": true,
+                "expanded": false,
+                "name": "Week 1",
+                "rulesummary": "Fixed date - 1 October 2026 - Hard lock",
+                "hasstatus": true,
+                "statuslabel": "Scheduled",
+                "statusmodifier": "ssc-status--scheduled",
+                "hasstatustitle": false,
+                "statustitle": "",
+                "needsreview": false,
+                "unlocktypeoptions": [{"value": "absolute", "label": "Fixed date", "selected": true}],
+                "locktypeoptions": [{"value": "hard", "label": "Hard lock", "selected": true}],
+                "locktypedisabled": false,
+                "showlocktype": true,
+                "showeventnote": false,
+                "showdate": true,
+                "showrelative": false,
+                "showevent": false,
+                "unlockdate": "2026-10-01",
+                "relativebaseoptions": [{"value": "start", "label": "Days after course start", "selected": true}],
+                "relativedays": "",
+                "hascompletionactivities": true,
+                "activityoptions": [{"value": "", "label": "Require activity completion", "selected": true}],
+                "pacingdelay": "0",
+                "hasgradedactivities": false,
+                "gradeactivityoptions": [],
+                "grademinimum": "",
+                "hasunlockbutton": true,
+                "unlockformid": "ssc-manual-unlock-45",
+                "arialabels": {
+                    "unlocktype": "Release method - Week 1",
+                    "locktype": "Lock mode - Week 1",
+                    "unlockdate": "Release date - Week 1",
+                    "relativebase": "Relative to - Week 1",
+                    "relativedays": "Number of days - Week 1",
+                    "eventactivity": "Require activity completion - Week 1",
+                    "pacingdelay": "Post-completion delay (days) - Week 1",
+                    "gradeactivity": "Require minimum grade on activity - Week 1",
+                    "grademinimum": "Minimum grade (%) - Week 1"
+                }
+            }
+        ],
+        "unlockforms": [{"formid": "ssc-manual-unlock-45"}],
+        "str": {
+            "sectionschedule": "Section schedule",
+            "sectionscheduledesc": "Configure when each section becomes available.",
+            "quickstats": "Schedule overview",
+            "releaserule": "Release method",
+            "locktype": "Lock mode",
+            "softlockeventforcedhard": "Completion triggers require Hard Lock.",
+            "unlockdate": "Release date",
+            "relativebase": "Relative to",
+            "relativedays": "Number of days",
+            "eventactivity": "Require activity completion",
+            "nocompletionactivities": "No completion-enabled activities were found.",
+            "pacingdelay": "Post-completion delay (days)",
+            "pacingdelayplaceholder": "Days to wait after completion",
+            "gradeactivity": "Require minimum grade on activity",
+            "grademinimum": "Minimum grade (%)",
+            "grademinimumplaceholder": "Minimum grade %",
+            "needsreviewhelp": "This schedule references a missing activity.",
+            "manualunlock": "Release now",
+            "manualunlockconfirm": "Release this section immediately?",
+            "savechanges": "Save changes"
+        }
+    }
+
+    @package    block_smartsection_control
+    @copyright  2026 M. AFZAL RIAZ
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+<div class="ssc-page ssc-manage ssc-ui">
+
+    {{> block_smartsection_control/nav_tabs }}
+
+    {{{needsreviewnotification}}}
+
+    <form method="post" action="{{formaction}}" id="ssc-section-save">
+        <input type="hidden" name="id" value="{{courseid}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+
+        <div class="ssc-surface ssc-surface--primary ssc-manager">
+            <div class="ssc-surface-header ssc-manager-header">
+                <h2 class="ssc-surface-title ssc-manager-title">{{str.sectionschedule}}</h2>
+                <p class="ssc-surface-desc ssc-manager-desc">{{str.sectionscheduledesc}}</p>
+                <div class="ssc-manager-stats" aria-label="{{str.quickstats}}">
+                    <span class="ssc-stat-pill">{{stats.total}}</span>
+                    <span class="ssc-stat-pill ssc-stat-pill--scheduled">{{stats.scheduled}}</span>
+                    <span class="ssc-stat-pill ssc-stat-pill--locked">{{stats.locked}}</span>
+                </div>
+            </div>
+
+            <div class="ssc-manager-list" role="list" aria-label="{{str.sectionschedule}}">
+                {{#sections}}
+                <details class="ssc-section-item {{#configured}}is-configured{{/configured}}{{^configured}}is-unmanaged{{/configured}}"
+                         role="listitem"
+                         data-sectionid="{{sectionid}}"
+                         {{#expanded}}open="open"{{/expanded}}>
+
+                    <summary class="ssc-section-summary">
+                        <span class="ssc-section-icon-wrap">{{#pix}}i/folder, core{{/pix}}</span>
+                        <div class="ssc-section-main">
+                            <span class="ssc-section-name">{{{name}}}</span>
+                            <span class="ssc-section-meta">{{rulesummary}}</span>
+                        </div>
+                        <div class="ssc-section-status">
+                            {{#hasstatus}}
+                            <span class="ssc-status {{statusmodifier}}"{{#hasstatustitle}} title="{{statustitle}}"{{/hasstatustitle}}>{{statuslabel}}</span>
+                            {{/hasstatus}}
+                        </div>
+                        <span class="ssc-chevron" aria-hidden="true"></span>
+                    </summary>
+
+                    <div class="ssc-section-body">
+                        <div class="ssc-field-grid">
+
+                            {{! Release method }}
+                            <div class="ssc-field">
+                                <label class="ssc-label" for="unlocktype_{{sectionid}}">{{str.releaserule}}</label>
+                                <select name="unlocktype_{{sectionid}}"
+                                        id="unlocktype_{{sectionid}}"
+                                        class="form-select form-select-sm"
+                                        aria-label="{{arialabels.unlocktype}}">
+                                    {{#unlocktypeoptions}}
+                                    <option value="{{value}}"{{#selected}} selected="selected"{{/selected}}>{{label}}</option>
+                                    {{/unlocktypeoptions}}
+                                </select>
+                            </div>
+
+                            {{! Lock mode }}
+                            <div class="ssc-field ssc-lock-wrapper"
+                                 id="locktypewrapper_{{sectionid}}"
+                                 style="display: {{#showlocktype}}flex{{/showlocktype}}{{^showlocktype}}none{{/showlocktype}};">
+                                <label class="ssc-label" for="locktype_{{sectionid}}">{{str.locktype}}</label>
+                                <select name="locktype_{{sectionid}}"
+                                        id="locktype_{{sectionid}}"
+                                        class="form-select form-select-sm"
+                                        aria-label="{{arialabels.locktype}}"
+                                        {{#locktypedisabled}}disabled="disabled"{{/locktypedisabled}}>
+                                    {{#locktypeoptions}}
+                                    <option value="{{value}}"{{#selected}} selected="selected"{{/selected}}>{{label}}</option>
+                                    {{/locktypeoptions}}
+                                </select>
+                                <p class="ssc-lock-event-note"
+                                   id="lockeventnote_{{sectionid}}"
+                                   style="display: {{#showeventnote}}block{{/showeventnote}}{{^showeventnote}}none{{/showeventnote}};">{{str.softlockeventforcedhard}}</p>
+                            </div>
+
+                            {{! Fixed date }}
+                            <div class="ssc-field ssc-rule-fields"
+                                 id="datewrapper_{{sectionid}}"
+                                 style="display: {{#showdate}}flex{{/showdate}}{{^showdate}}none{{/showdate}};">
+                                <label class="ssc-label" for="unlock_date_{{sectionid}}">{{str.unlockdate}}</label>
+                                <input type="date"
+                                       name="unlock_{{sectionid}}"
+                                       id="unlock_date_{{sectionid}}"
+                                       value="{{unlockdate}}"
+                                       class="form-control form-control-sm"
+                                       aria-label="{{arialabels.unlockdate}}">
+                            </div>
+
+                            {{! Relative schedule }}
+                            <div class="ssc-field ssc-rule-fields"
+                                 id="relativewrapper_{{sectionid}}"
+                                 style="display: {{#showrelative}}flex{{/showrelative}}{{^showrelative}}none{{/showrelative}};">
+                                <label class="ssc-label" for="relativebase_{{sectionid}}">{{str.relativebase}}</label>
+                                <select name="relativebase_{{sectionid}}"
+                                        id="relativebase_{{sectionid}}"
+                                        class="form-select form-select-sm"
+                                        aria-label="{{arialabels.relativebase}}">
+                                    {{#relativebaseoptions}}
+                                    <option value="{{value}}"{{#selected}} selected="selected"{{/selected}}>{{label}}</option>
+                                    {{/relativebaseoptions}}
+                                </select>
+                                <label class="ssc-label mt-2" for="relativedays_{{sectionid}}">{{str.relativedays}}</label>
+                                <input type="number"
+                                       name="relativedays_{{sectionid}}"
+                                       id="relativedays_{{sectionid}}"
+                                       value="{{relativedays}}"
+                                       min="0"
+                                       class="form-control form-control-sm"
+                                       placeholder="{{str.relativedays}}"
+                                       aria-label="{{arialabels.relativedays}}">
+                            </div>
+
+                            {{! Completion trigger }}
+                            <div class="ssc-field ssc-rule-fields"
+                                 id="eventwrapper_{{sectionid}}"
+                                 style="display: {{#showevent}}flex{{/showevent}}{{^showevent}}none{{/showevent}};">
+                                {{#needsreview}}
+                                <p class="ssc-review-help">{{str.needsreviewhelp}}</p>
+                                {{/needsreview}}
+
+                                <label class="ssc-label" for="event_activity_{{sectionid}}">{{str.eventactivity}}</label>
+                                {{#hascompletionactivities}}
+                                <select name="event_activity_{{sectionid}}"
+                                        id="event_activity_{{sectionid}}"
+                                        class="form-select form-select-sm"
+                                        aria-label="{{arialabels.eventactivity}}">
+                                    {{#activityoptions}}
+                                    <option value="{{value}}"{{#selected}} selected="selected"{{/selected}}>{{label}}</option>
+                                    {{/activityoptions}}
+                                </select>
+                                {{/hascompletionactivities}}
+                                {{^hascompletionactivities}}
+                                <div class="small text-danger">{{str.nocompletionactivities}}</div>
+                                {{/hascompletionactivities}}
+
+                                <label class="ssc-label mt-2" for="event_delay_{{sectionid}}">{{str.pacingdelay}}</label>
+                                <input type="number"
+                                       name="event_delay_{{sectionid}}"
+                                       id="event_delay_{{sectionid}}"
+                                       value="{{pacingdelay}}"
+                                       min="0"
+                                       class="form-control form-control-sm"
+                                       placeholder="{{str.pacingdelayplaceholder}}"
+                                       aria-label="{{arialabels.pacingdelay}}">
+
+                                {{#hasgradedactivities}}
+                                <label class="ssc-label mt-2" for="event_grade_activity_{{sectionid}}">{{str.gradeactivity}}</label>
+                                <select name="event_grade_activity_{{sectionid}}"
+                                        id="event_grade_activity_{{sectionid}}"
+                                        class="form-select form-select-sm"
+                                        aria-label="{{arialabels.gradeactivity}}">
+                                    {{#gradeactivityoptions}}
+                                    <option value="{{value}}"{{#selected}} selected="selected"{{/selected}}>{{label}}</option>
+                                    {{/gradeactivityoptions}}
+                                </select>
+                                <label class="ssc-label mt-2" for="event_grade_minimum_{{sectionid}}">{{str.grademinimum}}</label>
+                                <input type="number"
+                                       name="event_grade_minimum_{{sectionid}}"
+                                       id="event_grade_minimum_{{sectionid}}"
+                                       value="{{grademinimum}}"
+                                       min="0"
+                                       max="100"
+                                       step="0.1"
+                                       class="form-control form-control-sm"
+                                       placeholder="{{str.grademinimumplaceholder}}"
+                                       aria-label="{{arialabels.grademinimum}}">
+                                {{/hasgradedactivities}}
+                            </div>
+                        </div>
+
+                        {{#hasunlockbutton}}
+                        <div class="ssc-section-actions">
+                            <button type="submit"
+                                    name="manualunlock"
+                                    value="{{sectionid}}"
+                                    form="{{unlockformid}}"
+                                    class="btn btn-sm btn-outline-secondary ssc-unlock-now"
+                                    data-sectionid="{{sectionid}}"
+                                    data-ssc-confirm="{{str.manualunlockconfirm}}">{{str.manualunlock}}</button>
+                        </div>
+                        {{/hasunlockbutton}}
+                    </div>
+                </details>
+                {{/sections}}
+            </div>
+        </div>
+
+        <div class="ssc-save-bar">
+            <button type="submit" name="action" value="save" class="btn btn-primary">{{str.savechanges}}</button>
+        </div>
+    </form>
+
+    {{! Companion forms for the per-section Release now buttons. Kept outside the
+        Save form so a release never submits the whole schedule editor. }}
+    {{#unlockforms}}
+    <form method="post" action="{{formaction}}" id="{{formid}}" class="d-none ssc-manual-unlock-form">
+        <input type="hidden" name="id" value="{{courseid}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+    </form>
+    {{/unlockforms}}
+
+    {{#bulk}}
+    {{> block_smartsection_control/manage_bulk }}
+    {{/bulk}}
+</div>

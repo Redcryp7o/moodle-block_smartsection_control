@@ -1,6 +1,5 @@
 <?php
-declare(strict_types=1);
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@ declare(strict_types=1);
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Output renderer for the SmartSection Control block.
@@ -23,22 +22,21 @@ declare(strict_types=1);
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace block_smartsection_control\output;
+declare(strict_types=1);
 
-defined('MOODLE_INTERNAL') || die();
+namespace block_smartsection_control\output;
 
 /**
  * Plugin renderer for block_smartsection_control.
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends \plugin_renderer_base {
-
     /**
      * Render the teacher/manager dashboard block content.
      *
@@ -52,13 +50,22 @@ class renderer extends \plugin_renderer_base {
     /**
      * Render the student-facing block content from a dashboard widget.
      *
+     * The countdown behaviour is initialised through js_call_amd() rather than a
+     * {{#js}} block inside the template, so the module is requested through
+     * Moodle's standard AMD loading pipeline.
+     *
      * @param dashboard_widget $widget The exportable widget containing upcoming unlocks.
      * @return string Rendered HTML string.
      */
     public function render_block_content(dashboard_widget $widget): string {
-        return $this->render_from_template(
-            'block_smartsection_control/student_timeline',
-            $widget->export_for_template($this)
+        $data = $widget->export_for_template($this);
+
+        $this->page->requires->js_call_amd(
+            'block_smartsection_control/student_widget',
+            'init',
+            [$data['uniqid']]
         );
+
+        return $this->render_from_template('block_smartsection_control/student_timeline', $data);
     }
 }

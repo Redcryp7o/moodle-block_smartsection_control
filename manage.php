@@ -1,5 +1,19 @@
 <?php
-declare(strict_types=1);
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
  * SmartSection Control Management Page
  *
@@ -7,8 +21,10 @@ declare(strict_types=1);
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+declare(strict_types=1);
 
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/lib.php');
@@ -32,7 +48,7 @@ $PAGE->set_heading(format_string($course->fullname) . ' - ' . get_string('manage
 // Note: $DB, $OUTPUT, $USER, $PAGE are available at file scope after Moodle bootstrap;
 // no global declaration is needed outside of function/method bodies.
 
-// Handle email landing parameters to delay section unlock
+// Handle email landing parameters to delay section unlock.
 $delaysection = optional_param('delaysection', 0, PARAM_INT);
 $delaydays = optional_param('days', 0, PARAM_INT);
 $delayuserid = optional_param('userid', 0, PARAM_INT);
@@ -41,8 +57,10 @@ $delaytoken = optional_param('token', '', PARAM_ALPHANUM);
 if ($delaysection && $delaydays > 0 && $delaydays <= 7) {
     $authorized = false;
     $record = $DB->get_record('block_smartsection_control', ['sectionid' => $delaysection]);
-    if (!$record || (int) $record->courseid !== (int) $course->id
-            || (int) $record->unlocktime <= 0 || $record->unlocktype !== 'absolute') {
+    if (
+        !$record || (int) $record->courseid !== (int) $course->id
+            || (int) $record->unlocktime <= 0 || $record->unlocktype !== 'absolute'
+    ) {
         redirect(
             new moodle_url('/blocks/smartsection_control/manage.php', ['id' => $course->id]),
             get_string('invalid_delay_request', 'block_smartsection_control'),
@@ -51,20 +69,22 @@ if ($delaysection && $delaydays > 0 && $delaydays <= 7) {
         );
     }
 
-    // confirm_sesskey(false) performs a soft sesskey check: returns false instead of
+    // The confirm_sesskey(false) call performs a soft sesskey check: returns false instead of
     // throwing an exception when the key is invalid. This allows the delay link to
     // fall through to the HMAC token check below when accessed from an email client
     // that does not carry the Moodle session (which always lacks a valid sesskey).
     if (confirm_sesskey(false)) {
         $authorized = true;
     } else if ($delayuserid && $delaytoken && (int) $delayuserid === (int) $USER->id) {
-        if (\block_smartsection_control\helper::verify_delay_token(
-            $delayuserid,
-            $delaysection,
-            $delaydays,
-            (int) $record->unlocktime,
-            $delaytoken
-        )) {
+        if (
+            \block_smartsection_control\helper::verify_delay_token(
+                $delayuserid,
+                $delaysection,
+                $delaydays,
+                (int) $record->unlocktime,
+                $delaytoken
+            )
+        ) {
             $authorized = true;
         }
     }
@@ -113,7 +133,7 @@ if ($delaysection && $delaydays > 0 && $delaydays <= 7) {
             (int) $USER->id
         );
 
-        // Create/update calendar event
+        // Create/update calendar event.
         $sectionname = \block_smartsection_control\helper::get_section_display_name($course, $delaysection);
         \block_smartsection_control\calendar::create_unlock_event(
             $delaysection,
@@ -134,7 +154,7 @@ if ($delaysection && $delaydays > 0 && $delaydays <= 7) {
 
         $message = get_string('delay_success', 'block_smartsection_control', (object)[
             'days' => $delaydays,
-            'date' => userdate($record->unlocktime, get_string('strftimedatefullshort', 'langconfig'))
+            'date' => userdate($record->unlocktime, get_string('strftimedatefullshort', 'langconfig')),
         ]);
         redirect(
             new moodle_url('/blocks/smartsection_control/manage.php', ['id' => $course->id]),
@@ -153,17 +173,15 @@ if ($delaysection && $delaydays > 0 && $delaydays <= 7) {
 }
 
 
-// Register AMD module for the unlock-type selector show/hide logic.
+// Register AMD module for the unlock-type selector show/hide logic and
+// confirmation prompts. Moodle loads the plugin styles.css automatically.
 $PAGE->requires->js_call_amd('block_smartsection_control/manage', 'init');
 
-// Add CSS before header.
-$PAGE->requires->css('/blocks/smartsection_control/styles.css');
-
-// Get all course sections (except general)
+// Get all course sections (except general).
 $modinfo = get_fast_modinfo($course);
 $sections = $modinfo->get_section_info_all();
 
-// Handle bulk actions — POST + sesskey only (never mutate via GET).
+// Handle bulk actions â€” POST + sesskey only (never mutate via GET).
 $bulkaction = optional_param('bulkaction', '', PARAM_ALPHA);
 if ($bulkaction !== '') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !confirm_sesskey()) {
@@ -171,8 +189,10 @@ if ($bulkaction !== '') {
     }
 
     // Moodle-native confirmation for high-impact destructive bulk actions.
-    if (in_array($bulkaction, ['unlockall', 'clearall'], true)
-            && !optional_param('confirm', 0, PARAM_BOOL)) {
+    if (
+        in_array($bulkaction, ['unlockall', 'clearall'], true)
+            && !optional_param('confirm', 0, PARAM_BOOL)
+    ) {
         $managedcount = $DB->count_records('block_smartsection_control', ['courseid' => $courseid]);
         $confirmurl = new moodle_url('/blocks/smartsection_control/manage.php', [
             'id' => $course->id,
@@ -297,14 +317,14 @@ if ($bulkaction !== '') {
             $processed++;
         } else if ($bulkaction === 'shiftdates') {
             $shiftdays = optional_param('shiftdays', 0, PARAM_INT);
-            $skip_weekends_holidays = optional_param('skip_weekends_holidays', 0, PARAM_INT) ? true : false;
+            $skipweekendsholidays = optional_param('skip_weekends_holidays', 0, PARAM_INT) ? true : false;
             if ($shiftdays != 0) {
                 $record = $DB->get_record('block_smartsection_control', ['sectionid' => $sid]);
                 if ($record && $record->unlocktime > 0 && $record->unlocktype === 'absolute') {
                     $record->unlocktime = \block_smartsection_control\helper::shift_date_excluding_weekends(
                         (int) $record->unlocktime,
                         $shiftdays,
-                        $skip_weekends_holidays
+                        $skipweekendsholidays
                     );
                     $record->timemodified = time();
                     $DB->update_record('block_smartsection_control', $record);
@@ -425,7 +445,7 @@ if ($bulkaction !== '') {
     }
 }
 
-// Handle manual unlock — must run before Save (Unlock Now POST must not trigger Save).
+// Handle manual unlock â€” must run before Save (Unlock Now POST must not trigger Save).
 $manualunlock = optional_param('manualunlock', 0, PARAM_INT);
 if ($manualunlock) {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !confirm_sesskey()) {
@@ -442,9 +462,9 @@ if ($manualunlock) {
     );
 }
 
-// Handle individual section saves — explicit action=save only (not Unlock Now / bulk).
+// Handle individual section saves â€” explicit action=save only (not Unlock Now / bulk).
 // NOTE: Do not detect Save via name=save + PARAM_BOOL. A <button name="save"> without
-// value= submits save="" which PARAM_BOOL treats as false — Save silently did nothing.
+// value= submits save="" which PARAM_BOOL treats as false â€” Save silently did nothing.
 $action = optional_param('action', '', PARAM_ALPHA);
 if ($action === 'save') {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -498,8 +518,10 @@ if ($action === 'save') {
         if ($locktype !== 'soft') {
             $locktype = 'hard';
         }
-        if ($unlocktype === 'event'
-                || !\block_smartsection_control\helper::soft_lock_allowed_for_unlocktype($unlocktype)) {
+        if (
+            $unlocktype === 'event'
+                || !\block_smartsection_control\helper::soft_lock_allowed_for_unlocktype($unlocktype)
+        ) {
             $locktype = 'hard';
         }
 
@@ -557,7 +579,10 @@ if ($action === 'save') {
             if ($eventactivity > 0 && !$DB->record_exists('course_modules', ['id' => $eventactivity, 'course' => $courseid])) {
                 throw new \moodle_exception('invalidcmid', 'error');
             }
-            if ($eventgradeactivity > 0 && !$DB->record_exists('course_modules', ['id' => $eventgradeactivity, 'course' => $courseid])) {
+            if (
+                $eventgradeactivity > 0
+                && !$DB->record_exists('course_modules', ['id' => $eventgradeactivity, 'course' => $courseid])
+            ) {
                 throw new \moodle_exception('invalidcmid', 'error');
             }
             $conditions = [];
@@ -595,7 +620,7 @@ if ($action === 'save') {
     }
 
     // Validate-all already done above; mutate inside one delegated transaction.
-    // Do not catch Throwable here — Moodle must surface the real error; the
+    // Do not catch Throwable here â€” Moodle must surface the real error; the
     // delegated transaction rolls back automatically when an exception escapes.
     $transaction = $DB->start_delegated_transaction();
     foreach ($pending as $item) {
@@ -750,7 +775,7 @@ if ($action === 'save') {
     }
     $transaction->allow_commit();
 
-    // Calendar sync is secondary — never roll back a successful schedule persist.
+    // Calendar sync is secondary â€” never roll back a successful schedule persist.
     $calendarfailures = 0;
     foreach ($calendarops as $op) {
         try {
@@ -782,59 +807,41 @@ if ($action === 'save') {
     );
 }
 
-// Render output
-echo $OUTPUT->header();
+// -------------------------------------------------------------------------
+// Template data preparation. All markup lives in the Mustache templates
+// block_smartsection_control/manage_page and .../manage_bulk.
 
-echo html_writer::start_div('ssc-page ssc-manage ssc-ui');
+// Convert a value => label option map into Mustache-ready select options.
+// Takes the option map keyed by submitted value plus the currently selected
+// value, and returns a list of Mustache-ready value/label/selected rows.
+$buildoptions = static function (array $options, $selected): array {
+    $built = [];
+    foreach ($options as $value => $label) {
+        $built[] = [
+            'value' => (string) $value,
+            'label' => (string) $label,
+            'selected' => ((string) $value === (string) $selected),
+        ];
+    }
+    return $built;
+};
 
-echo html_writer::start_tag('ul', ['class' => 'nav nav-tabs ssc-nav-tabs', 'role' => 'tablist']);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/manage.php', ['id' => $course->id]),
-        get_string('manage', 'block_smartsection_control'),
-        ['class' => 'nav-link active', 'aria-current' => 'page']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/timeline.php', ['id' => $course->id]),
-        get_string('timeline_view', 'block_smartsection_control'),
-        ['class' => 'nav-link']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/history.php', ['id' => $course->id]),
-        get_string('history_view', 'block_smartsection_control'),
-        ['class' => 'nav-link']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::end_tag('ul');
-
+// Warn teachers when a restored completion trigger lost its referenced activity.
 $needsreviewcount = 0;
 $reviewcandidates = $DB->get_records('block_smartsection_control', [
-    'courseid' => $course->id,
+    'courseid' => $courseid,
     'unlocktype' => 'event',
 ]);
 foreach ($reviewcandidates as $reviewrec) {
     $conditions = json_decode((string) ($reviewrec->eventconditions ?? ''), true);
-    if (is_array($conditions) && !empty($conditions['restore_needs_review'])
+    if (
+        is_array($conditions) && !empty($conditions['restore_needs_review'])
             && empty($conditions['activity_completion'])
-            && empty($conditions['grade_threshold'])) {
+            && empty($conditions['grade_threshold'])
+    ) {
         $needsreviewcount++;
     }
 }
-if ($needsreviewcount > 0) {
-    echo $OUTPUT->notification(
-        get_string('needs_review_banner', 'block_smartsection_control', $needsreviewcount),
-        \core\output\notification::NOTIFY_WARNING
-    );
-}
-
-$manualunlockforms = [];
 
 $completionactivities = [];
 $gradedactivities = [];
@@ -855,61 +862,38 @@ foreach ($modinfo->get_cms() as $cm) {
     }
 }
 
+$unlocktypelabels = [
+    'absolute' => get_string('unlocktype_absolute', 'block_smartsection_control'),
+    'relative' => get_string('unlocktype_relative', 'block_smartsection_control'),
+    'event' => get_string('unlocktype_event', 'block_smartsection_control'),
+    'none' => get_string('unlocktype_none', 'block_smartsection_control'),
+];
+$locktypelabels = [
+    'hard' => get_string('locktype_hard', 'block_smartsection_control'),
+    'soft' => get_string('locktype_soft', 'block_smartsection_control'),
+];
+$relativebaselabels = [
+    'start' => get_string('relative_base_start', 'block_smartsection_control'),
+    'prev_section' => get_string('relative_base_prev_section', 'block_smartsection_control'),
+];
+
 $sectioncount = 0;
 $scheduledcount = 0;
 $lockedcount = 0;
+$sectionrows = [];
+$unlockforms = [];
+
 foreach ($sections as $section) {
     if ((int) $section->section === 0 || !\block_smartsection_control\helper::is_valid_section_info($section)) {
         continue;
     }
+
     $sectioncount++;
-    $sid = \block_smartsection_control\helper::resolve_section_id_from_info($section, $courseid);
-    $rec = $DB->get_record('block_smartsection_control', ['sectionid' => $sid]);
-    if ($rec) {
-        $scheduledcount++;
-        $st = \block_smartsection_control\helper::get_unlock_status($rec, $course);
-        if (($st['status'] ?? '') !== 'unlocked') {
-            $lockedcount++;
-        }
-    }
-}
-
-echo html_writer::start_tag('form', [
-    'method' => 'post',
-    'action' => $PAGE->url->out(false),
-    'id' => 'ssc-section-save',
-]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $course->id]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-
-echo html_writer::start_div('ssc-surface ssc-surface--primary ssc-manager');
-
-echo html_writer::start_div('ssc-surface-header ssc-manager-header');
-echo html_writer::tag('h2', get_string('section_schedule', 'block_smartsection_control'), ['class' => 'ssc-surface-title ssc-manager-title']);
-echo html_writer::tag('p', get_string('section_schedule_desc', 'block_smartsection_control'), ['class' => 'ssc-surface-desc ssc-manager-desc']);
-echo html_writer::start_div('ssc-manager-stats', ['aria-label' => get_string('quick_stats', 'block_smartsection_control')]);
-echo html_writer::span($sectioncount . ' ' . get_string('total_sections', 'block_smartsection_control'), 'ssc-stat-pill');
-echo html_writer::span($scheduledcount . ' ' . get_string('scheduled_sections', 'block_smartsection_control'), 'ssc-stat-pill ssc-stat-pill--scheduled');
-echo html_writer::span($lockedcount . ' ' . get_string('locked_sections', 'block_smartsection_control'), 'ssc-stat-pill ssc-stat-pill--locked');
-echo html_writer::end_div();
-echo html_writer::end_div();
-
-echo html_writer::start_div('ssc-manager-list', [
-    'role' => 'list',
-    'aria-label' => get_string('section_schedule', 'block_smartsection_control'),
-]);
-
-foreach ($sections as $section) {
-    if ((int) $section->section === 0) {
-        continue;
-    }
-    if (!\block_smartsection_control\helper::is_valid_section_info($section)) {
-        continue;
-    }
 
     $sectionid = \block_smartsection_control\helper::resolve_section_id_from_info($section, $courseid);
     $record = $DB->get_record('block_smartsection_control', ['sectionid' => $sectionid]);
     $name = $courseformat->get_section_name($section);
+    $formattedname = format_string($name);
 
     $unlocktype = 'absolute';
     $locktype = 'hard';
@@ -923,6 +907,7 @@ foreach ($sections as $section) {
     $grademinimum = '';
 
     if ($record) {
+        $scheduledcount++;
         $unlocktype = $record->unlocktype ?: 'absolute';
         $locktype = $record->locktype ?? 'hard';
         if (!empty($record->unlocktime)) {
@@ -952,60 +937,60 @@ foreach ($sections as $section) {
     }
 
     $hasruleui = ($unlocktype !== 'none' && $unlocktype !== '');
-    $isconfigured = (bool) $record;
-    $itemclass = 'ssc-section-item' . ($isconfigured ? ' is-configured' : ' is-unmanaged');
 
     // Status badge.
-    $status = '';
+    $hasstatus = false;
+    $statuslabel = '';
+    $statusmodifier = '';
+    $statustitle = '';
     $needsreview = false;
+
     if ($record) {
         $statusinfo = \block_smartsection_control\helper::get_unlock_status($record, $course);
+        if (($statusinfo['status'] ?? '') !== 'unlocked') {
+            $lockedcount++;
+        }
+        $hasstatus = true;
+
         if ($statusinfo['status'] === 'unlocked') {
-            $status = html_writer::span(
-                get_string('unlocked', 'block_smartsection_control'),
-                'ssc-status ssc-status--unlocked'
-            );
+            $statuslabel = get_string('unlocked', 'block_smartsection_control');
+            $statusmodifier = 'ssc-status--unlocked';
         } else if ($statusinfo['status'] === 'scheduled' && !empty($statusinfo['unlocktime'])) {
-            $status = html_writer::span(
-                get_string('locked_until', 'block_smartsection_control',
-                    userdate((int) $statusinfo['unlocktime'], get_string('strftimedate', 'langconfig'))),
-                'ssc-status ssc-status--scheduled'
+            $statuslabel = get_string(
+                'locked_until',
+                'block_smartsection_control',
+                userdate((int) $statusinfo['unlocktime'], get_string('strftimedate', 'langconfig'))
             );
+            $statusmodifier = 'ssc-status--scheduled';
         } else if (($record->unlocktype ?? '') === 'event') {
             $conditions = is_array($eventconditions) ? $eventconditions : [];
-            if (is_array($conditions) && !empty($conditions['restore_needs_review'])
+            if (
+                !empty($conditions['restore_needs_review'])
                     && empty($conditions['activity_completion'])
-                    && empty($conditions['grade_threshold'])) {
+                    && empty($conditions['grade_threshold'])
+            ) {
                 $needsreview = true;
-                $status = html_writer::span(
-                    get_string('status_needs_review', 'block_smartsection_control'),
-                    'ssc-status ssc-status--warning',
-                    ['title' => get_string('needs_review_help', 'block_smartsection_control')]
-                );
+                $statuslabel = get_string('status_needs_review', 'block_smartsection_control');
+                $statusmodifier = 'ssc-status--warning';
+                $statustitle = get_string('needs_review_help', 'block_smartsection_control');
             } else {
-                $status = html_writer::span(
-                    get_string('status_waiting_completion', 'block_smartsection_control'),
-                    'ssc-status ssc-status--waiting'
-                );
+                $statuslabel = get_string('status_waiting_completion', 'block_smartsection_control');
+                $statusmodifier = 'ssc-status--waiting';
             }
         } else if (($record->unlocktype ?? '') === 'relative') {
-            $status = html_writer::span(
-                get_string('status_relative_release', 'block_smartsection_control'),
-                'ssc-status ssc-status--info'
-            );
+            $statuslabel = get_string('status_relative_release', 'block_smartsection_control');
+            $statusmodifier = 'ssc-status--info';
         } else {
-            $status = html_writer::span(
-                get_string('locked', 'block_smartsection_control'),
-                'ssc-status ssc-status--locked'
-            );
+            $statuslabel = get_string('locked', 'block_smartsection_control');
+            $statusmodifier = 'ssc-status--locked';
         }
     }
 
     // Collapsed rule summary.
     if (!$record) {
-        $rulesummary = get_string('unlocktype_none', 'block_smartsection_control');
+        $rulesummary = $unlocktypelabels['none'];
     } else if (($record->unlocktype ?? '') === 'absolute') {
-        $rulesummary = get_string('unlocktype_absolute', 'block_smartsection_control');
+        $rulesummary = $unlocktypelabels['absolute'];
         if (!empty($record->unlocktime)) {
             $rulesummary .= ' · ' . userdate((int) $record->unlocktime, get_string('strftimedate', 'langconfig'));
         }
@@ -1013,520 +998,160 @@ foreach ($sections as $section) {
             ? get_string('locktype_soft_short', 'block_smartsection_control')
             : get_string('locktype_hard_short', 'block_smartsection_control'));
     } else if (($record->unlocktype ?? '') === 'relative') {
-        $rulesummary = get_string('unlocktype_relative', 'block_smartsection_control');
+        $rulesummary = $unlocktypelabels['relative'];
         if ($relativedays !== '' && $relativedays !== null) {
-            if ($relativebase === 'prev_section') {
-                $rulesummary .= ' · ' . get_string('relative_days_after_prev_section', 'block_smartsection_control')
-                    . ': ' . $relativedays;
-            } else {
-                $rulesummary .= ' · ' . get_string('relative_days_after_start', 'block_smartsection_control')
-                    . ': ' . $relativedays;
-            }
+            $rulesummary .= ' · ' . ($relativebase === 'prev_section'
+                ? get_string('relative_days_after_prev_section', 'block_smartsection_control')
+                : get_string('relative_days_after_start', 'block_smartsection_control'))
+                . ': ' . $relativedays;
         }
     } else if (($record->unlocktype ?? '') === 'event') {
-        $rulesummary = get_string('unlocktype_event', 'block_smartsection_control');
+        $rulesummary = $unlocktypelabels['event'];
         if ($needsreview) {
             $rulesummary .= ' · ' . get_string('status_needs_review', 'block_smartsection_control');
         } else if (!empty($selectedactivity) && isset($completionactivities[(int) $selectedactivity])) {
             $rulesummary .= ' · ' . $completionactivities[(int) $selectedactivity];
         }
     } else {
-        $rulesummary = get_string('unlocktype_none', 'block_smartsection_control');
+        $rulesummary = $unlocktypelabels['none'];
     }
 
-    $lockselectattrs = [
-        'class' => 'form-select form-select-sm',
-        'id' => "locktype_{$sectionid}",
-        'aria-label' => get_string('locktype', 'block_smartsection_control') . ' — ' . format_string($name),
+    $hasunlockbutton = ($record && empty($record->manualoverride));
+    $unlockformid = 'ssc-manual-unlock-' . $sectionid;
+    if ($hasunlockbutton) {
+        $unlockforms[] = ['formid' => $unlockformid];
+    }
+
+    $sectionrows[] = [
+        'sectionid' => $sectionid,
+        'configured' => (bool) $record,
+        'expanded' => $needsreview,
+        'name' => $formattedname,
+        'rulesummary' => $rulesummary,
+        'hasstatus' => $hasstatus,
+        'statuslabel' => $statuslabel,
+        'statusmodifier' => $statusmodifier,
+        'hasstatustitle' => ($statustitle !== ''),
+        'statustitle' => $statustitle,
+        'needsreview' => $needsreview,
+        'unlocktypeoptions' => $buildoptions($unlocktypelabels, $unlocktype),
+        'locktypeoptions' => $buildoptions($locktypelabels, $record ? $locktype : 'hard'),
+        'locktypedisabled' => !$hasruleui,
+        'showlocktype' => $hasruleui,
+        'showeventnote' => ($unlocktype === 'event'),
+        'showdate' => ($unlocktype === 'absolute'),
+        'showrelative' => ($unlocktype === 'relative'),
+        'showevent' => ($unlocktype === 'event'),
+        'unlockdate' => $current,
+        'relativebaseoptions' => $buildoptions($relativebaselabels, $relativebase),
+        'relativedays' => (string) $relativedays,
+        'hascompletionactivities' => !empty($completionactivities),
+        'activityoptions' => $buildoptions(
+            ['' => get_string('event_activity_completion', 'block_smartsection_control')] + $completionactivities,
+            $selectedactivity
+        ),
+        'pacingdelay' => (string) $pacingdelay,
+        'hasgradedactivities' => !empty($gradedactivities),
+        'gradeactivityoptions' => $buildoptions(
+            ['' => get_string('event_grade_activity', 'block_smartsection_control')] + $gradedactivities,
+            $selectedgradeactivity
+        ),
+        'grademinimum' => (string) $grademinimum,
+        'hasunlockbutton' => $hasunlockbutton,
+        'unlockformid' => $unlockformid,
+        'arialabels' => [
+            'unlocktype' => get_string('unlocktype', 'block_smartsection_control') . ' — ' . $formattedname,
+            'locktype' => get_string('locktype', 'block_smartsection_control') . ' — ' . $formattedname,
+            'unlockdate' => get_string('unlockdate', 'block_smartsection_control') . ' — ' . $formattedname,
+            'relativebase' => get_string('relative_base', 'block_smartsection_control') . ' — ' . $formattedname,
+            'relativedays' => get_string('relative_days', 'block_smartsection_control') . ' — ' . $formattedname,
+            'eventactivity' => get_string('event_activity_completion', 'block_smartsection_control')
+                . ' — ' . $formattedname,
+            'pacingdelay' => get_string('pacing_delay_days', 'block_smartsection_control') . ' — ' . $formattedname,
+            'gradeactivity' => get_string('event_grade_activity', 'block_smartsection_control')
+                . ' — ' . $formattedname,
+            'grademinimum' => get_string('event_grade_minimum', 'block_smartsection_control') . ' — ' . $formattedname,
+        ],
     ];
-    if (!$hasruleui) {
-        $lockselectattrs['disabled'] = 'disabled';
-    }
-
-    $typesel = html_writer::select(
-        [
-            'absolute' => get_string('unlocktype_absolute', 'block_smartsection_control'),
-            'relative' => get_string('unlocktype_relative', 'block_smartsection_control'),
-            'event' => get_string('unlocktype_event', 'block_smartsection_control'),
-            'none' => get_string('unlocktype_none', 'block_smartsection_control'),
-        ],
-        "unlocktype_{$sectionid}",
-        $unlocktype,
-        false,
-        [
-            'class' => 'form-select form-select-sm',
-            'id' => "unlocktype_{$sectionid}",
-            'aria-label' => get_string('unlocktype', 'block_smartsection_control') . ' — ' . format_string($name),
-        ]
-    );
-
-    $locksel = html_writer::select(
-        [
-            'hard' => get_string('locktype_hard', 'block_smartsection_control'),
-            'soft' => get_string('locktype_soft', 'block_smartsection_control'),
-        ],
-        "locktype_{$sectionid}",
-        $record ? $locktype : 'hard',
-        false,
-        $lockselectattrs
-    );
-
-    $datefield = html_writer::empty_tag('input', [
-        'type' => 'date',
-        'name' => "unlock_{$sectionid}",
-        'value' => $current,
-        'class' => 'form-control form-control-sm',
-        'id' => "unlock_date_{$sectionid}",
-        'aria-label' => get_string('unlockdate', 'block_smartsection_control') . ' — ' . format_string($name),
-    ]);
-
-    $relativebasesel = html_writer::select(
-        [
-            'start' => get_string('relative_base_start', 'block_smartsection_control'),
-            'prev_section' => get_string('relative_base_prev_section', 'block_smartsection_control'),
-        ],
-        "relativebase_{$sectionid}",
-        $relativebase,
-        false,
-        [
-            'class' => 'form-select form-select-sm',
-            'id' => "relativebase_{$sectionid}",
-            'aria-label' => get_string('relative_base', 'block_smartsection_control') . ' — ' . format_string($name),
-        ]
-    );
-    $relativeinput = html_writer::empty_tag('input', [
-        'type' => 'number',
-        'name' => "relativedays_{$sectionid}",
-        'value' => $relativedays,
-        'min' => '0',
-        'class' => 'form-control form-control-sm',
-        'id' => "relativedays_{$sectionid}",
-        'placeholder' => get_string('relative_days', 'block_smartsection_control'),
-        'aria-label' => get_string('relative_days', 'block_smartsection_control') . ' — ' . format_string($name),
-    ]);
-
-    if (!empty($completionactivities)) {
-        $activityselect = html_writer::select(
-            $completionactivities,
-            "event_activity_{$sectionid}",
-            $selectedactivity,
-            ['' => get_string('event_activity_completion', 'block_smartsection_control')],
-            [
-                'class' => 'form-select form-select-sm',
-                'id' => "event_activity_{$sectionid}",
-                'aria-label' => get_string('event_activity_completion', 'block_smartsection_control') . ' — ' . format_string($name),
-            ]
-        );
-    } else {
-        $activityselect = html_writer::div(
-            get_string('no_completion_activities', 'block_smartsection_control'),
-            'small text-danger'
-        );
-    }
-
-    $delayinput = html_writer::empty_tag('input', [
-        'type' => 'number',
-        'name' => "event_delay_{$sectionid}",
-        'value' => $pacingdelay,
-        'min' => '0',
-        'class' => 'form-control form-control-sm',
-        'id' => "event_delay_{$sectionid}",
-        'placeholder' => get_string('pacing_delay_days_placeholder', 'block_smartsection_control'),
-        'aria-label' => get_string('pacing_delay_days', 'block_smartsection_control') . ' — ' . format_string($name),
-    ]);
-
-    $gradeactivityselect = '';
-    if (!empty($gradedactivities)) {
-        $gradeactivityselect = html_writer::select(
-            $gradedactivities,
-            "event_grade_activity_{$sectionid}",
-            $selectedgradeactivity,
-            ['' => get_string('event_grade_activity', 'block_smartsection_control')],
-            [
-                'class' => 'form-select form-select-sm',
-                'id' => "event_grade_activity_{$sectionid}",
-                'aria-label' => get_string('event_grade_activity', 'block_smartsection_control') . ' — ' . format_string($name),
-            ]
-        );
-    }
-
-    $grademinimuminput = html_writer::empty_tag('input', [
-        'type' => 'number',
-        'name' => "event_grade_minimum_{$sectionid}",
-        'value' => $grademinimum,
-        'min' => '0',
-        'max' => '100',
-        'step' => '0.1',
-        'class' => 'form-control form-control-sm',
-        'id' => "event_grade_minimum_{$sectionid}",
-        'placeholder' => get_string('event_grade_minimum_placeholder', 'block_smartsection_control'),
-        'aria-label' => get_string('event_grade_minimum', 'block_smartsection_control') . ' — ' . format_string($name),
-    ]);
-
-    $manualbtn = '';
-    if ($record && empty($record->manualoverride)) {
-        $muformid = 'ssc-manual-unlock-' . $sectionid;
-        $manualbtn = html_writer::tag('button', get_string('manual_unlock', 'block_smartsection_control'), [
-            'type' => 'submit',
-            'name' => 'manualunlock',
-            'value' => (string) $sectionid,
-            'form' => $muformid,
-            'class' => 'btn btn-sm btn-outline-secondary ssc-unlock-now',
-            'data-sectionid' => (string) $sectionid,
-            'onclick' => 'return confirm(' . json_encode(get_string('manual_unlock_confirm', 'block_smartsection_control')) . ');',
-        ]);
-        $manualunlockforms[$sectionid] = $muformid;
-    }
-
-    $icon = $OUTPUT->pix_icon('i/folder', '', 'core', [
-        'class' => 'icon ssc-section-icon',
-        'aria-hidden' => 'true',
-    ]);
-
-    $detailsattrs = [
-        'class' => $itemclass,
-        'role' => 'listitem',
-        'data-sectionid' => (string) $sectionid,
-    ];
-    // Keep rows needing review expanded so the warning is visible.
-    if ($needsreview) {
-        $detailsattrs['open'] = 'open';
-    }
-
-    echo html_writer::start_tag('details', $detailsattrs);
-
-    echo html_writer::start_tag('summary', ['class' => 'ssc-section-summary']);
-    echo html_writer::span($icon, 'ssc-section-icon-wrap');
-    echo html_writer::start_div('ssc-section-main');
-    echo html_writer::span(format_string($name), 'ssc-section-name');
-    echo html_writer::span(s($rulesummary), 'ssc-section-meta');
-    echo html_writer::end_div();
-    echo html_writer::div($status, 'ssc-section-status');
-    echo html_writer::span('', 'ssc-chevron', ['aria-hidden' => 'true']);
-    echo html_writer::end_tag('summary');
-
-    echo html_writer::start_div('ssc-section-body');
-    echo html_writer::start_div('ssc-field-grid');
-
-    echo html_writer::start_div('ssc-field');
-    echo html_writer::tag('label', get_string('releaserule', 'block_smartsection_control'), [
-        'class' => 'ssc-label',
-        'for' => "unlocktype_{$sectionid}",
-    ]);
-    echo $typesel;
-    echo html_writer::end_div();
-
-    echo html_writer::start_div('ssc-field ssc-lock-wrapper', [
-        'id' => "locktypewrapper_{$sectionid}",
-        'style' => 'display: ' . ($hasruleui ? 'flex' : 'none') . ';',
-    ]);
-    echo html_writer::tag('label', get_string('locktype', 'block_smartsection_control'), [
-        'class' => 'ssc-label',
-        'for' => "locktype_{$sectionid}",
-    ]);
-    echo $locksel;
-    echo html_writer::tag(
-        'p',
-        get_string('soft_lock_event_forced_hard', 'block_smartsection_control'),
-        [
-            'class' => 'ssc-lock-event-note',
-            'id' => "lockeventnote_{$sectionid}",
-            'style' => 'display: ' . ($unlocktype === 'event' ? 'block' : 'none') . ';',
-        ]
-    );
-    echo html_writer::end_div();
-
-    echo html_writer::start_div('ssc-field ssc-rule-fields', [
-        'id' => "datewrapper_{$sectionid}",
-        'style' => 'display: ' . ($unlocktype === 'absolute' ? 'flex' : 'none') . ';',
-    ]);
-    echo html_writer::tag('label', get_string('unlockdate', 'block_smartsection_control'), [
-        'class' => 'ssc-label',
-        'for' => "unlock_date_{$sectionid}",
-    ]);
-    echo $datefield;
-    echo html_writer::end_div();
-
-    echo html_writer::start_div('ssc-field ssc-rule-fields', [
-        'id' => "relativewrapper_{$sectionid}",
-        'style' => 'display: ' . ($unlocktype === 'relative' ? 'flex' : 'none') . ';',
-    ]);
-    echo html_writer::tag('label', get_string('relative_base', 'block_smartsection_control'), [
-        'class' => 'ssc-label',
-        'for' => "relativebase_{$sectionid}",
-    ]);
-    echo $relativebasesel;
-    echo html_writer::tag('label', get_string('relative_days', 'block_smartsection_control'), [
-        'class' => 'ssc-label mt-2',
-        'for' => "relativedays_{$sectionid}",
-    ]);
-    echo $relativeinput;
-    echo html_writer::end_div();
-
-    echo html_writer::start_div('ssc-field ssc-rule-fields', [
-        'id' => "eventwrapper_{$sectionid}",
-        'style' => 'display: ' . ($unlocktype === 'event' ? 'flex' : 'none') . ';',
-    ]);
-    if ($needsreview) {
-        echo html_writer::tag('p', get_string('needs_review_help', 'block_smartsection_control'), [
-            'class' => 'ssc-review-help',
-        ]);
-    }
-    echo html_writer::tag('label', get_string('event_activity_completion', 'block_smartsection_control'), [
-        'class' => 'ssc-label',
-        'for' => "event_activity_{$sectionid}",
-    ]);
-    echo $activityselect;
-    echo html_writer::tag('label', get_string('pacing_delay_days', 'block_smartsection_control'), [
-        'class' => 'ssc-label mt-2',
-        'for' => "event_delay_{$sectionid}",
-    ]);
-    echo $delayinput;
-    if ($gradeactivityselect !== '') {
-        echo html_writer::tag('label', get_string('event_grade_activity', 'block_smartsection_control'), [
-            'class' => 'ssc-label mt-2',
-            'for' => "event_grade_activity_{$sectionid}",
-        ]);
-        echo $gradeactivityselect;
-        echo html_writer::tag('label', get_string('event_grade_minimum', 'block_smartsection_control'), [
-            'class' => 'ssc-label mt-2',
-            'for' => "event_grade_minimum_{$sectionid}",
-        ]);
-        echo $grademinimuminput;
-    }
-    echo html_writer::end_div();
-
-    echo html_writer::end_div(); // .ssc-field-grid
-
-    if ($manualbtn !== '') {
-        echo html_writer::div($manualbtn, 'ssc-section-actions');
-    }
-
-    echo html_writer::end_div(); // .ssc-section-body
-    echo html_writer::end_tag('details');
 }
 
-echo html_writer::end_div(); // .ssc-manager-list
-echo html_writer::end_div(); // .ssc-manager
+$formaction = $PAGE->url->out(false);
 
-echo html_writer::start_div('ssc-save-bar');
-echo html_writer::tag('button', get_string('savechanges'), [
-    'type' => 'submit',
-    'name' => 'action',
-    'value' => 'save',
-    'class' => 'btn btn-primary',
-]);
-echo html_writer::end_div();
-echo html_writer::end_tag('form');
-
-foreach ($manualunlockforms as $muSectionid => $muFormid) {
-    echo html_writer::start_tag('form', [
-        'method' => 'post',
-        'action' => $PAGE->url->out(false),
-        'id' => $muFormid,
-        'class' => 'd-none ssc-manual-unlock-form',
-    ]);
-    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $courseid]);
-    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-    echo html_writer::end_tag('form');
-}
-
-// Bulk operations — one secondary surface (separate forms; never nested in Save).
-echo html_writer::start_div('ssc-surface ssc-surface--secondary ssc-bulk');
-echo html_writer::start_div('ssc-surface-header');
-echo html_writer::tag('h2', get_string('bulkactions', 'block_smartsection_control'), ['class' => 'ssc-surface-title']);
-echo html_writer::tag('p', get_string('bulkactions_help', 'block_smartsection_control'), ['class' => 'ssc-surface-desc']);
-echo html_writer::end_div();
-
-echo html_writer::start_div('ssc-bulk-body');
-
-// Immediate operations.
-echo html_writer::start_div('ssc-bulk-group');
-echo html_writer::tag('h3', get_string('bulk_immediate', 'block_smartsection_control'), ['class' => 'ssc-group-label']);
-
-echo html_writer::start_tag('details', ['class' => 'ssc-disclosure']);
-echo html_writer::start_tag('summary');
-echo html_writer::start_div('ssc-disclosure-main');
-echo html_writer::span(get_string('lockall', 'block_smartsection_control'), 'ssc-disclosure-title');
-echo html_writer::span(get_string('lockall_summary', 'block_smartsection_control'), 'ssc-disclosure-meta');
-echo html_writer::end_div();
-echo html_writer::span('', 'ssc-chevron', ['aria-hidden' => 'true']);
-echo html_writer::end_tag('summary');
-echo html_writer::start_div('ssc-disclosure-body');
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false)]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $course->id]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'bulkaction', 'value' => 'lockall']);
-echo html_writer::start_div('ssc-field-grid');
-echo html_writer::start_div('ssc-field');
-echo html_writer::tag('label', get_string('lockalldate', 'block_smartsection_control'), [
-    'class' => 'ssc-label',
-    'for' => 'lockalldate',
-]);
-echo html_writer::empty_tag('input', [
-    'type' => 'datetime-local',
-    'name' => 'lockalldate',
-    'id' => 'lockalldate',
-    'required' => true,
-    'class' => 'form-control form-control-sm',
-]);
-echo html_writer::end_div();
-echo html_writer::start_div('ssc-field');
-echo html_writer::tag('label', get_string('locktype', 'block_smartsection_control'), [
-    'class' => 'ssc-label',
-    'for' => 'lockalllocktype',
-]);
-echo html_writer::select(
-    [
-        'hard' => get_string('locktype_hard', 'block_smartsection_control'),
-        'soft' => get_string('locktype_soft', 'block_smartsection_control'),
+$templatedata = [
+    'tabs' => \block_smartsection_control\output\navigation::tabs(
+        $courseid,
+        \block_smartsection_control\output\navigation::TAB_MANAGE
+    ),
+    'needsreviewnotification' => $needsreviewcount > 0
+        ? $OUTPUT->notification(
+            get_string('needs_review_banner', 'block_smartsection_control', $needsreviewcount),
+            \core\output\notification::NOTIFY_WARNING
+        )
+        : '',
+    'formaction' => $formaction,
+    'courseid' => $courseid,
+    'sesskey' => sesskey(),
+    'stats' => [
+        'total' => $sectioncount . ' ' . get_string('total_sections', 'block_smartsection_control'),
+        'scheduled' => $scheduledcount . ' ' . get_string('scheduled_sections', 'block_smartsection_control'),
+        'locked' => $lockedcount . ' ' . get_string('locked_sections', 'block_smartsection_control'),
     ],
-    'lockalllocktype',
-    'hard',
-    false,
-    ['class' => 'form-select form-select-sm', 'id' => 'lockalllocktype']
-);
-echo html_writer::end_div();
-echo html_writer::end_div();
-echo html_writer::start_div('ssc-disclosure-actions');
-echo html_writer::tag('button', get_string('lockall_submit', 'block_smartsection_control'), [
-    'type' => 'submit',
-    'class' => 'btn btn-primary btn-sm',
-    'onclick' => 'return confirm(' . json_encode(get_string('lockallconfirm', 'block_smartsection_control')) . ');',
-]);
-echo html_writer::end_div();
-echo html_writer::end_tag('form');
-echo html_writer::end_div();
-echo html_writer::end_tag('details');
+    'sections' => $sectionrows,
+    'unlockforms' => $unlockforms,
+    'str' => [
+        'sectionschedule' => get_string('section_schedule', 'block_smartsection_control'),
+        'sectionscheduledesc' => get_string('section_schedule_desc', 'block_smartsection_control'),
+        'quickstats' => get_string('quick_stats', 'block_smartsection_control'),
+        'releaserule' => get_string('releaserule', 'block_smartsection_control'),
+        'locktype' => get_string('locktype', 'block_smartsection_control'),
+        'softlockeventforcedhard' => get_string('soft_lock_event_forced_hard', 'block_smartsection_control'),
+        'unlockdate' => get_string('unlockdate', 'block_smartsection_control'),
+        'relativebase' => get_string('relative_base', 'block_smartsection_control'),
+        'relativedays' => get_string('relative_days', 'block_smartsection_control'),
+        'eventactivity' => get_string('event_activity_completion', 'block_smartsection_control'),
+        'nocompletionactivities' => get_string('no_completion_activities', 'block_smartsection_control'),
+        'pacingdelay' => get_string('pacing_delay_days', 'block_smartsection_control'),
+        'pacingdelayplaceholder' => get_string('pacing_delay_days_placeholder', 'block_smartsection_control'),
+        'gradeactivity' => get_string('event_grade_activity', 'block_smartsection_control'),
+        'grademinimum' => get_string('event_grade_minimum', 'block_smartsection_control'),
+        'grademinimumplaceholder' => get_string('event_grade_minimum_placeholder', 'block_smartsection_control'),
+        'needsreviewhelp' => get_string('needs_review_help', 'block_smartsection_control'),
+        'manualunlock' => get_string('manual_unlock', 'block_smartsection_control'),
+        'manualunlockconfirm' => get_string('manual_unlock_confirm', 'block_smartsection_control'),
+        'savechanges' => get_string('savechanges'),
+    ],
+    'bulk' => [
+        'formaction' => $formaction,
+        'courseid' => $courseid,
+        'sesskey' => sesskey(),
+        'locktypeoptions' => $buildoptions($locktypelabels, 'hard'),
+        'str' => [
+            'bulkactions' => get_string('bulkactions', 'block_smartsection_control'),
+            'bulkactionshelp' => get_string('bulkactions_help', 'block_smartsection_control'),
+            'bulkimmediate' => get_string('bulk_immediate', 'block_smartsection_control'),
+            'bulkscheduletools' => get_string('bulk_schedule_tools', 'block_smartsection_control'),
+            'lockall' => get_string('lockall', 'block_smartsection_control'),
+            'lockallsummary' => get_string('lockall_summary', 'block_smartsection_control'),
+            'lockalldate' => get_string('lockalldate', 'block_smartsection_control'),
+            'locktype' => get_string('locktype', 'block_smartsection_control'),
+            'lockallsubmit' => get_string('lockall_submit', 'block_smartsection_control'),
+            'lockallconfirm' => get_string('lockallconfirm', 'block_smartsection_control'),
+            'unlockallaction' => get_string('unlockall_action', 'block_smartsection_control'),
+            'clearallaction' => get_string('clearall_action', 'block_smartsection_control'),
+            'shiftalldates' => get_string('shift_all_dates', 'block_smartsection_control'),
+            'shiftsummary' => get_string('shift_summary', 'block_smartsection_control'),
+            'shiftdays' => get_string('shift_days', 'block_smartsection_control'),
+            'shiftsubmit' => get_string('shift_submit', 'block_smartsection_control'),
+            'skipweekendsholidays' => get_string('skip_weekends_holidays', 'block_smartsection_control'),
+            'setsectioninterval' => get_string('set_section_interval', 'block_smartsection_control'),
+            'intervalsummary' => get_string('interval_summary', 'block_smartsection_control'),
+            'startdate' => get_string('start_date', 'block_smartsection_control'),
+            'intervaldays' => get_string('interval_days', 'block_smartsection_control'),
+            'intervalsubmit' => get_string('interval_submit', 'block_smartsection_control'),
+        ],
+    ],
+];
 
-echo html_writer::start_div('ssc-bulk-quick');
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false), 'class' => 'd-inline']);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $course->id]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'bulkaction', 'value' => 'unlockall']);
-echo html_writer::tag('button', get_string('unlockall_action', 'block_smartsection_control'), [
-    'type' => 'submit',
-    'class' => 'btn btn-outline-warning btn-sm',
-]);
-echo html_writer::end_tag('form');
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false), 'class' => 'd-inline']);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $course->id]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'bulkaction', 'value' => 'clearall']);
-echo html_writer::tag('button', get_string('clearall_action', 'block_smartsection_control'), [
-    'type' => 'submit',
-    'class' => 'btn btn-outline-danger btn-sm',
-]);
-echo html_writer::end_tag('form');
-echo html_writer::end_div();
-echo html_writer::end_div(); // .ssc-bulk-group immediate
-
-// Scheduling tools.
-echo html_writer::start_div('ssc-bulk-group');
-echo html_writer::tag('h3', get_string('bulk_schedule_tools', 'block_smartsection_control'), ['class' => 'ssc-group-label']);
-
-echo html_writer::start_tag('details', ['class' => 'ssc-disclosure']);
-echo html_writer::start_tag('summary');
-echo html_writer::start_div('ssc-disclosure-main');
-echo html_writer::span(get_string('shift_all_dates', 'block_smartsection_control'), 'ssc-disclosure-title');
-echo html_writer::span(get_string('shift_summary', 'block_smartsection_control'), 'ssc-disclosure-meta');
-echo html_writer::end_div();
-echo html_writer::span('', 'ssc-chevron', ['aria-hidden' => 'true']);
-echo html_writer::end_tag('summary');
-echo html_writer::start_div('ssc-disclosure-body');
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false)]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $course->id]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'bulkaction', 'value' => 'shiftdates']);
-echo html_writer::start_div('ssc-field');
-echo html_writer::tag('label', get_string('shift_days', 'block_smartsection_control'), [
-    'class' => 'ssc-label',
-    'for' => 'shiftdays',
-]);
-echo html_writer::empty_tag('input', [
-    'type' => 'number',
-    'name' => 'shiftdays',
-    'id' => 'shiftdays',
-    'required' => true,
-    'class' => 'form-control form-control-sm',
-    'value' => '0',
-]);
-echo html_writer::end_div();
-echo html_writer::start_div('form-check');
-echo html_writer::checkbox(
-    'skip_weekends_holidays',
-    1,
-    false,
-    get_string('skip_weekends_holidays', 'block_smartsection_control'),
-    ['class' => 'form-check-input', 'id' => 'skip_weekends_holidays']
-);
-echo html_writer::end_div();
-echo html_writer::start_div('ssc-disclosure-actions');
-echo html_writer::tag('button', get_string('shift_submit', 'block_smartsection_control'), [
-    'type' => 'submit',
-    'class' => 'btn btn-secondary btn-sm',
-]);
-echo html_writer::end_div();
-echo html_writer::end_tag('form');
-echo html_writer::end_div();
-echo html_writer::end_tag('details');
-
-echo html_writer::start_tag('details', ['class' => 'ssc-disclosure']);
-echo html_writer::start_tag('summary');
-echo html_writer::start_div('ssc-disclosure-main');
-echo html_writer::span(get_string('set_section_interval', 'block_smartsection_control'), 'ssc-disclosure-title');
-echo html_writer::span(get_string('interval_summary', 'block_smartsection_control'), 'ssc-disclosure-meta');
-echo html_writer::end_div();
-echo html_writer::span('', 'ssc-chevron', ['aria-hidden' => 'true']);
-echo html_writer::end_tag('summary');
-echo html_writer::start_div('ssc-disclosure-body');
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false)]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $course->id]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'bulkaction', 'value' => 'applyinterval']);
-echo html_writer::start_div('ssc-field-grid');
-echo html_writer::start_div('ssc-field');
-echo html_writer::tag('label', get_string('start_date', 'block_smartsection_control'), [
-    'class' => 'ssc-label',
-    'for' => 'intervalstart',
-]);
-echo html_writer::empty_tag('input', [
-    'type' => 'datetime-local',
-    'name' => 'intervalstart',
-    'id' => 'intervalstart',
-    'required' => true,
-    'class' => 'form-control form-control-sm',
-]);
-echo html_writer::end_div();
-echo html_writer::start_div('ssc-field');
-echo html_writer::tag('label', get_string('interval_days', 'block_smartsection_control'), [
-    'class' => 'ssc-label',
-    'for' => 'intervaldays',
-]);
-echo html_writer::empty_tag('input', [
-    'type' => 'number',
-    'name' => 'intervaldays',
-    'id' => 'intervaldays',
-    'required' => true,
-    'min' => '1',
-    'class' => 'form-control form-control-sm',
-    'value' => '7',
-]);
-echo html_writer::end_div();
-echo html_writer::end_div();
-echo html_writer::start_div('ssc-disclosure-actions');
-echo html_writer::tag('button', get_string('interval_submit', 'block_smartsection_control'), [
-    'type' => 'submit',
-    'class' => 'btn btn-secondary btn-sm',
-]);
-echo html_writer::end_div();
-echo html_writer::end_tag('form');
-echo html_writer::end_div();
-echo html_writer::end_tag('details');
-echo html_writer::end_div(); // .ssc-bulk-group tools
-
-echo html_writer::end_div(); // .ssc-bulk-body
-echo html_writer::end_div(); // .ssc-bulk
-
-echo html_writer::end_div(); // .ssc-page
+echo $OUTPUT->header();
+echo $OUTPUT->render_from_template('block_smartsection_control/manage_page', $templatedata);
 echo $OUTPUT->footer();

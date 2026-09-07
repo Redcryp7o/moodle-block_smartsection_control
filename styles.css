@@ -5,7 +5,7 @@
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 /* ==========================================================================
@@ -1317,6 +1317,19 @@ li[data-event-component="block_smartsection_control"] .icon,
 td.day:not(.today):has([data-event-component="block_smartsection_control"]),
 td.day:not(.today):has(.calendar_event_sectionrelease) {
     background-color: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.035));
+}
+
+/* ==========================================================================
+   Soft Lock teaser (course view)
+   ========================================================================== */
+
+/* Applied by the softlock AMD module to sections that are Soft Locked for the
+   current user. Access control itself is enforced server-side through Moodle
+   section availability; this rule only conveys the restricted state visually. */
+.ssc-softlock {
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+    user-select: none !important;
 }
 
 

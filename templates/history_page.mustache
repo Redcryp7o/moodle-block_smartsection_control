@@ -1,0 +1,122 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_smartsection_control/history_page
+
+    Audit history page: paginated table of SmartSection lock-state changes.
+
+    Context variables required for this template:
+    * tabs - tab descriptors consumed by the nav_tabs partial (see that template)
+    * title - localised page heading
+    * description - localised page description
+    * hasrows - true when the current page has audit rows
+    * emptymessage - localised empty-state message
+    * headings - array of column heading strings
+    * rows - array of audit rows
+      * sectionname - preformatted section name (already passed through format_string)
+      * action - localised action label
+      * actionmodifier - status pill modifier class for the action
+      * triggertype - trigger description, or the placeholder when absent
+      * triggeredby - display name of the actor
+      * hasoldstate / oldstate - previous lock state pill
+      * hasnewstate / newstate - new lock state pill
+      * timecreated - localised timestamp
+      * placeholder - dash shown when a state column is empty
+    * pagingbar - rendered core paging bar
+
+    Example context (json):
+    {
+        "title": "Audit history",
+        "description": "Review SmartSection scheduling and release changes.",
+        "hasrows": true,
+        "emptymessage": "No SmartSection activity has been recorded yet.",
+        "headings": ["Section", "Action", "Trigger", "Performed by", "Previous state", "New state", "Timestamp"],
+        "rows": [
+            {
+                "sectionname": "Week 1",
+                "action": "Unlocked",
+                "actionmodifier": "ssc-status--created",
+                "triggertype": "Cron",
+                "triggeredby": "System",
+                "hasoldstate": true,
+                "oldstate": "Locked",
+                "hasnewstate": true,
+                "newstate": "Unlocked",
+                "timecreated": "1 Oct 2026, 09:00",
+                "placeholder": "-"
+            }
+        ],
+        "pagingbar": ""
+    }
+
+    @package    block_smartsection_control
+    @copyright  2026 M. AFZAL RIAZ
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+<div class="ssc-page ssc-history ssc-ui">
+
+    {{> block_smartsection_control/nav_tabs }}
+
+    <div class="ssc-surface ssc-surface--primary ssc-manager ssc-history-surface">
+        <div class="ssc-surface-header ssc-manager-header">
+            <h2 class="ssc-surface-title ssc-manager-title">{{title}}</h2>
+            <p class="ssc-surface-desc ssc-manager-desc">{{description}}</p>
+        </div>
+
+        {{#hasrows}}
+        <div class="ssc-history-table-wrap">
+            <table class="table align-middle ssc-history-table mb-0">
+                <thead>
+                    <tr>
+                        {{#headings}}
+                        <th scope="col">{{.}}</th>
+                        {{/headings}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#rows}}
+                    <tr>
+                        <td>{{{sectionname}}}</td>
+                        <td><span class="ssc-status {{actionmodifier}}">{{action}}</span></td>
+                        <td>{{triggertype}}</td>
+                        <td>{{triggeredby}}</td>
+                        <td>
+                            {{#hasoldstate}}<span class="ssc-status ssc-status--info">{{oldstate}}</span>{{/hasoldstate}}
+                            {{^hasoldstate}}{{placeholder}}{{/hasoldstate}}
+                        </td>
+                        <td>
+                            {{#hasnewstate}}<span class="ssc-status ssc-status--updated">{{newstate}}</span>{{/hasnewstate}}
+                            {{^hasnewstate}}{{placeholder}}{{/hasnewstate}}
+                        </td>
+                        <td><small class="text-muted">{{timecreated}}</small></td>
+                    </tr>
+                    {{/rows}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ssc-history-paging">{{{pagingbar}}}</div>
+        {{/hasrows}}
+
+        {{^hasrows}}
+        <div class="ssc-empty ssc-history-empty" role="status">
+            <div class="ssc-empty-icon">{{#pix}}i/report, core{{/pix}}</div>
+            <p class="ssc-empty-title">{{emptymessage}}</p>
+        </div>
+        {{/hasrows}}
+    </div>
+</div>

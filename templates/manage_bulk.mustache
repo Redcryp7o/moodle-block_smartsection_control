@@ -1,0 +1,194 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_smartsection_control/manage_bulk
+
+    Bulk operations surface of the Manage page. Each operation posts its own
+    independent form so it is never nested inside the per-section Save form.
+
+    Context variables required for this template:
+    * formaction - URL every bulk form posts to
+    * courseid - course id submitted as the "id" field
+    * sesskey - current session key
+    * locktypeoptions - lock mode options for the "schedule all" form
+    * str - localised labels, see the example context below
+
+    Example context (json):
+    {
+        "formaction": "https://example.com/manage.php?id=2",
+        "courseid": 2,
+        "sesskey": "abc123",
+        "locktypeoptions": [
+            {"value": "hard", "label": "Hard lock", "selected": true},
+            {"value": "soft", "label": "Soft lock", "selected": false}
+        ],
+        "str": {
+            "bulkactions": "Bulk operations",
+            "bulkactionshelp": "Apply actions across multiple schedules.",
+            "bulkimmediate": "Immediate operations",
+            "bulkscheduletools": "Scheduling tools",
+            "lockall": "Schedule all sections",
+            "lockallsummary": "Apply one fixed release date to all sections.",
+            "lockalldate": "Release date",
+            "locktype": "Lock mode",
+            "lockallsubmit": "Schedule sections",
+            "lockallconfirm": "Schedule every section?",
+            "unlockallaction": "Release all",
+            "clearallaction": "Clear schedules",
+            "shiftalldates": "Shift release dates",
+            "shiftsummary": "Move existing fixed-date schedules.",
+            "shiftdays": "Days to shift",
+            "shiftsubmit": "Shift dates",
+            "skipweekendsholidays": "Skip weekends and configured holidays",
+            "setsectioninterval": "Apply section interval",
+            "intervalsummary": "Generate evenly spaced release dates.",
+            "startdate": "Start date",
+            "intervaldays": "Days between sections",
+            "intervalsubmit": "Apply interval"
+        }
+    }
+
+    @package    block_smartsection_control
+    @copyright  2026 M. AFZAL RIAZ
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+<div class="ssc-surface ssc-surface--secondary ssc-bulk">
+    <div class="ssc-surface-header">
+        <h2 class="ssc-surface-title">{{str.bulkactions}}</h2>
+        <p class="ssc-surface-desc">{{str.bulkactionshelp}}</p>
+    </div>
+
+    <div class="ssc-bulk-body">
+
+        {{! ── Immediate operations ── }}
+        <div class="ssc-bulk-group">
+            <h3 class="ssc-group-label">{{str.bulkimmediate}}</h3>
+
+            <details class="ssc-disclosure">
+                <summary>
+                    <div class="ssc-disclosure-main">
+                        <span class="ssc-disclosure-title">{{str.lockall}}</span>
+                        <span class="ssc-disclosure-meta">{{str.lockallsummary}}</span>
+                    </div>
+                    <span class="ssc-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="ssc-disclosure-body">
+                    <form method="post" action="{{formaction}}">
+                        <input type="hidden" name="id" value="{{courseid}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <input type="hidden" name="bulkaction" value="lockall">
+                        <div class="ssc-field-grid">
+                            <div class="ssc-field">
+                                <label class="ssc-label" for="lockalldate">{{str.lockalldate}}</label>
+                                <input type="datetime-local" name="lockalldate" id="lockalldate" required="required" class="form-control form-control-sm">
+                            </div>
+                            <div class="ssc-field">
+                                <label class="ssc-label" for="lockalllocktype">{{str.locktype}}</label>
+                                <select name="lockalllocktype" id="lockalllocktype" class="form-select form-select-sm">
+                                    {{#locktypeoptions}}
+                                    <option value="{{value}}"{{#selected}} selected="selected"{{/selected}}>{{label}}</option>
+                                    {{/locktypeoptions}}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ssc-disclosure-actions">
+                            <button type="submit" class="btn btn-primary btn-sm" data-ssc-confirm="{{str.lockallconfirm}}">{{str.lockallsubmit}}</button>
+                        </div>
+                    </form>
+                </div>
+            </details>
+
+            <div class="ssc-bulk-quick">
+                <form method="post" action="{{formaction}}" class="d-inline">
+                    <input type="hidden" name="id" value="{{courseid}}">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="bulkaction" value="unlockall">
+                    <button type="submit" class="btn btn-outline-warning btn-sm">{{str.unlockallaction}}</button>
+                </form>
+                <form method="post" action="{{formaction}}" class="d-inline">
+                    <input type="hidden" name="id" value="{{courseid}}">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="bulkaction" value="clearall">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">{{str.clearallaction}}</button>
+                </form>
+            </div>
+        </div>
+
+        {{! ── Scheduling tools ── }}
+        <div class="ssc-bulk-group">
+            <h3 class="ssc-group-label">{{str.bulkscheduletools}}</h3>
+
+            <details class="ssc-disclosure">
+                <summary>
+                    <div class="ssc-disclosure-main">
+                        <span class="ssc-disclosure-title">{{str.shiftalldates}}</span>
+                        <span class="ssc-disclosure-meta">{{str.shiftsummary}}</span>
+                    </div>
+                    <span class="ssc-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="ssc-disclosure-body">
+                    <form method="post" action="{{formaction}}">
+                        <input type="hidden" name="id" value="{{courseid}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <input type="hidden" name="bulkaction" value="shiftdates">
+                        <div class="ssc-field">
+                            <label class="ssc-label" for="shiftdays">{{str.shiftdays}}</label>
+                            <input type="number" name="shiftdays" id="shiftdays" required="required" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="skip_weekends_holidays" value="1" name="skip_weekends_holidays">
+                            <label for="skip_weekends_holidays">{{str.skipweekendsholidays}}</label>
+                        </div>
+                        <div class="ssc-disclosure-actions">
+                            <button type="submit" class="btn btn-secondary btn-sm">{{str.shiftsubmit}}</button>
+                        </div>
+                    </form>
+                </div>
+            </details>
+
+            <details class="ssc-disclosure">
+                <summary>
+                    <div class="ssc-disclosure-main">
+                        <span class="ssc-disclosure-title">{{str.setsectioninterval}}</span>
+                        <span class="ssc-disclosure-meta">{{str.intervalsummary}}</span>
+                    </div>
+                    <span class="ssc-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="ssc-disclosure-body">
+                    <form method="post" action="{{formaction}}">
+                        <input type="hidden" name="id" value="{{courseid}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <input type="hidden" name="bulkaction" value="applyinterval">
+                        <div class="ssc-field-grid">
+                            <div class="ssc-field">
+                                <label class="ssc-label" for="intervalstart">{{str.startdate}}</label>
+                                <input type="datetime-local" name="intervalstart" id="intervalstart" required="required" class="form-control form-control-sm">
+                            </div>
+                            <div class="ssc-field">
+                                <label class="ssc-label" for="intervaldays">{{str.intervaldays}}</label>
+                                <input type="number" name="intervaldays" id="intervaldays" required="required" min="1" class="form-control form-control-sm" value="7">
+                            </div>
+                        </div>
+                        <div class="ssc-disclosure-actions">
+                            <button type="submit" class="btn btn-secondary btn-sm">{{str.intervalsubmit}}</button>
+                        </div>
+                    </form>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>

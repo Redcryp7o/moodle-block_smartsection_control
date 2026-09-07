@@ -1,6 +1,5 @@
 <?php
-declare(strict_types=1);
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@ declare(strict_types=1);
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Moodle calendar integration for the SmartSection Control block.
@@ -26,22 +25,21 @@ declare(strict_types=1);
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace block_smartsection_control;
+declare(strict_types=1);
 
-defined('MOODLE_INTERNAL') || die();
+namespace block_smartsection_control;
 
 /**
  * Calendar event manager for section unlock dates.
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class calendar {
-
     /**
      * Create or update the calendar event for a section unlock date.
      *

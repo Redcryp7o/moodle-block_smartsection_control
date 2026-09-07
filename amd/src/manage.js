@@ -1,4 +1,4 @@
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,17 +11,18 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * AMD module for the SmartSection Control manage page.
  *
- * Show/hide rule-specific fields inside accordion rows.
- * Does not intercept Save submission.
+ * Show/hide rule-specific fields inside accordion rows, and confirm
+ * high-impact submissions declared with data-ssc-confirm.
+ * Does not intercept plain Save submission.
  *
  * @module     block_smartsection_control/manage
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 define([], function() {
@@ -85,6 +86,24 @@ define([], function() {
         }
     }
 
+    /**
+     * Attach confirmation prompts to buttons carrying a data-ssc-confirm message.
+     *
+     * Replaces the inline onclick attributes previously emitted by manage.php.
+     * The message text is a server-rendered language string held in the data
+     * attribute, so no user-facing string is defined here.
+     */
+    function registerConfirmations() {
+        document.querySelectorAll('[data-ssc-confirm]').forEach(function(trigger) {
+            trigger.addEventListener('click', function(event) {
+                var message = trigger.getAttribute('data-ssc-confirm');
+                if (message && !window.confirm(message)) {
+                    event.preventDefault();
+                }
+            });
+        });
+    }
+
     return {
         init: function() {
             document.querySelectorAll('[id^="unlocktype_"]').forEach(function(select) {
@@ -94,6 +113,8 @@ define([], function() {
                 });
                 updateVisibility(select, sectionId);
             });
+
+            registerConfirmations();
         }
     };
 });

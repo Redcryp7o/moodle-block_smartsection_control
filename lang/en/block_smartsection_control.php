@@ -1,11 +1,28 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
  * English language strings for block_smartsection_control
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'SmartSection Control';
 $string['smartsectioncontrolsettings'] = 'SmartSection Control settings';
@@ -116,8 +133,12 @@ $string['calendar_event_name'] = '{$a} · Release';
 $string['calendarreleaseevent'] = '{$a} · Release';
 $string['sectionrelease'] = 'Section release';
 $string['calendar_event_description'] = 'The section "{$a->section}" in course "{$a->course}" becomes available to learners at this time.';
-$string['addinstance'] = 'Add a SmartSection Control block';
-$string['myaddinstance'] = 'Add a SmartSection Control block to the Dashboard';
+// Capability descriptions. Moodle resolves block capabilities to the
+// "<blockname>:<capability>" string identifier, so these keys must not be
+// shortened to "addinstance" / "myaddinstance" / "manage".
+$string['smartsection_control:addinstance'] = 'Add a SmartSection Control block';
+$string['smartsection_control:myaddinstance'] = 'Add a SmartSection Control block to the Dashboard';
+$string['smartsection_control:manage'] = 'Manage SmartSection Control release schedules';
 $string['quick_stats'] = 'Schedule overview';
 $string['total_sections'] = 'Total sections';
 $string['unlocked_sections'] = 'Available';
@@ -182,4 +203,3 @@ $string['unlocks_in'] = 'Unlocks in';
 $string['next_unlock'] = 'Next';
 $string['just_unlocked'] = 'Available now';
 $string['messageprovider:unlock_notification'] = 'Upcoming section release notification';
-

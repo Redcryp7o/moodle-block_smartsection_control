@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
  * History/Logging View
  *
@@ -6,7 +21,7 @@
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once(__DIR__ . '/../../config.php');
@@ -26,8 +41,6 @@ $PAGE->set_pagelayout('incourse');
 $PAGE->set_title(get_string('history_view', 'block_smartsection_control'));
 $PAGE->set_heading(format_string($course->fullname) . ' - ' . get_string('history_view', 'block_smartsection_control'));
 
-$PAGE->requires->css('/blocks/smartsection_control/styles.css');
-
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = 50;
 
@@ -40,74 +53,19 @@ $history = $DB->get_records_sql(
     $perpage
 );
 
-echo $OUTPUT->header();
-
-echo html_writer::start_div('ssc-page ssc-history ssc-ui');
-
-echo html_writer::start_tag('ul', ['class' => 'nav nav-tabs ssc-nav-tabs', 'role' => 'tablist']);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/manage.php', ['id' => $courseid]),
-        get_string('manage', 'block_smartsection_control'),
-        ['class' => 'nav-link']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/timeline.php', ['id' => $courseid]),
-        get_string('timeline_view', 'block_smartsection_control'),
-        ['class' => 'nav-link']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/history.php', ['id' => $courseid]),
-        get_string('history_view', 'block_smartsection_control'),
-        ['class' => 'nav-link active', 'aria-current' => 'page']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::end_tag('ul');
-
-echo html_writer::start_div('ssc-surface ssc-surface--primary ssc-manager ssc-history-surface');
-echo html_writer::start_div('ssc-surface-header ssc-manager-header');
-echo html_writer::tag('h2', get_string('history_view', 'block_smartsection_control'), ['class' => 'ssc-surface-title ssc-manager-title']);
-echo html_writer::tag('p', get_string('history_desc', 'block_smartsection_control'), ['class' => 'ssc-surface-desc ssc-manager-desc']);
-echo html_writer::end_div();
-
-if (empty($history)) {
-    echo html_writer::start_div('ssc-empty ssc-history-empty', ['role' => 'status']);
-    echo html_writer::div(
-        $OUTPUT->pix_icon('i/report', '', 'core', ['class' => 'icon', 'aria-hidden' => 'true']),
-        'ssc-empty-icon'
-    );
-    echo html_writer::tag('p', get_string('no_history', 'block_smartsection_control'), ['class' => 'ssc-empty-title']);
-    echo html_writer::end_div();
-    echo html_writer::end_div(); // surface
-    echo html_writer::end_div();
-    echo $OUTPUT->footer();
-    exit;
-}
-
-echo html_writer::start_div('ssc-history-table-wrap');
-
-$table = new html_table();
-$table->attributes['class'] = 'table align-middle ssc-history-table mb-0';
-$table->head = [
-    get_string('sectionname', 'block_smartsection_control'),
-    get_string('action', 'block_smartsection_control'),
-    get_string('trigger_type', 'block_smartsection_control'),
-    get_string('triggered_by', 'block_smartsection_control'),
-    get_string('old_state', 'block_smartsection_control'),
-    get_string('new_state', 'block_smartsection_control'),
-    get_string('timecreated', 'block_smartsection_control'),
+// Action label to status-pill modifier map, keyed by the stored action value.
+$actionmodifiers = [
+    'unlocked' => 'ssc-status--created',
+    'created'  => 'ssc-status--created',
+    'locked'   => 'ssc-status--locked',
+    'cleared'  => 'ssc-status--cleared',
+    'updated'  => 'ssc-status--updated',
 ];
-$table->data = [];
+
+$placeholder = '-';
+$rows = [];
 
 foreach ($history as $record) {
-    $sectionname = '';
     if (!empty($record->sectionname)) {
         $sectionname = is_array($record->sectionname)
             ? (get_string('sectionname', 'block_smartsection_control') . ' ' . (int) $record->section)
@@ -117,61 +75,54 @@ foreach ($history as $record) {
     }
 
     $actionkey = (string) $record->action;
-    $actiontext = s(ucfirst($actionkey));
-    $statusmod = 'ssc-status--muted';
-    if ($actionkey === 'unlocked' || $actionkey === 'created') {
-        $statusmod = 'ssc-status--created';
-    } else if ($actionkey === 'locked') {
-        $statusmod = 'ssc-status--locked';
-    } else if ($actionkey === 'cleared') {
-        $statusmod = 'ssc-status--cleared';
-    } else if ($actionkey === 'updated') {
-        $statusmod = 'ssc-status--updated';
-    }
-    $actiondisplay = html_writer::span($actiontext, 'ssc-status ' . $statusmod);
 
-    $triggeredby = s(\block_smartsection_control\helper::format_history_actor(
-        $record,
-        $historyquery['fieldprefix']
-    ));
-
-    $oldstatebadge = $record->old_state
-        ? html_writer::span(s(ucfirst((string) $record->old_state)), 'ssc-status ssc-status--info')
-        : '-';
-    $newstatebadge = $record->new_state
-        ? html_writer::span(s(ucfirst((string) $record->new_state)), 'ssc-status ssc-status--updated')
-        : '-';
-
-    $table->data[] = [
-        format_string($sectionname),
-        $actiondisplay,
-        $record->trigger_type
-            ? s(ucfirst(str_replace('_', ' ', (string) $record->trigger_type)))
-            : '-',
-        $triggeredby,
-        $oldstatebadge,
-        $newstatebadge,
-        html_writer::tag(
-            'small',
-            userdate($record->timecreated, get_string('strftimedatetimeshort', 'langconfig')),
-            ['class' => 'text-muted']
+    $rows[] = [
+        'sectionname'    => format_string($sectionname),
+        'action'         => ucfirst($actionkey),
+        'actionmodifier' => $actionmodifiers[$actionkey] ?? 'ssc-status--muted',
+        'triggertype'    => $record->trigger_type
+            ? ucfirst(str_replace('_', ' ', (string) $record->trigger_type))
+            : $placeholder,
+        'triggeredby'    => \block_smartsection_control\helper::format_history_actor(
+            $record,
+            $historyquery['fieldprefix']
         ),
+        'hasoldstate'    => (bool) $record->old_state,
+        'oldstate'       => ucfirst((string) ($record->old_state ?? '')),
+        'hasnewstate'    => (bool) $record->new_state,
+        'newstate'       => ucfirst((string) ($record->new_state ?? '')),
+        'timecreated'    => userdate($record->timecreated, get_string('strftimedatetimeshort', 'langconfig')),
+        'placeholder'    => $placeholder,
     ];
 }
 
-echo html_writer::table($table);
-echo html_writer::end_div(); // .ssc-history-table-wrap
-
-echo html_writer::div(
-    $OUTPUT->paging_bar(
+$templatedata = [
+    'tabs' => \block_smartsection_control\output\navigation::tabs(
+        $courseid,
+        \block_smartsection_control\output\navigation::TAB_HISTORY
+    ),
+    'title' => get_string('history_view', 'block_smartsection_control'),
+    'description' => get_string('history_desc', 'block_smartsection_control'),
+    'hasrows' => !empty($rows),
+    'emptymessage' => get_string('no_history', 'block_smartsection_control'),
+    'headings' => [
+        get_string('sectionname', 'block_smartsection_control'),
+        get_string('action', 'block_smartsection_control'),
+        get_string('trigger_type', 'block_smartsection_control'),
+        get_string('triggered_by', 'block_smartsection_control'),
+        get_string('old_state', 'block_smartsection_control'),
+        get_string('new_state', 'block_smartsection_control'),
+        get_string('timecreated', 'block_smartsection_control'),
+    ],
+    'rows' => $rows,
+    'pagingbar' => $OUTPUT->paging_bar(
         $total,
         $page,
         $perpage,
         new moodle_url('/blocks/smartsection_control/history.php', ['id' => $courseid])
     ),
-    'ssc-history-paging'
-);
+];
 
-echo html_writer::end_div(); // .ssc-history-surface
-echo html_writer::end_div(); // .ssc-page
+echo $OUTPUT->header();
+echo $OUTPUT->render_from_template('block_smartsection_control/history_page', $templatedata);
 echo $OUTPUT->footer();

@@ -1,6 +1,5 @@
 <?php
-declare(strict_types=1);
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@ declare(strict_types=1);
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Core library functions for the SmartSection Control block.
@@ -27,10 +26,10 @@ declare(strict_types=1);
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+declare(strict_types=1);
 
 /**
  * Enforce the correct lock state for a single course section.
@@ -193,7 +192,6 @@ function block_smartsection_control_before_http_headers(): void {
     // -----------------------------------------------------------------------
     // Match any /mod/ script (view, attempt, review, etc.), not only view.php.
     if (strpos($PAGE->url->out_omit_querystring(), '/mod/') !== false) {
-
         $courseid = optional_param('course', 0, PARAM_INT);
         if (!$courseid) {
             $courseid = $PAGE->course->id ?? 0;
@@ -203,9 +201,11 @@ function block_smartsection_control_before_http_headers(): void {
             $context = context_course::instance($courseid);
             // Teachers/managers who can ignore availability or manage this plugin
             // must not be redirected away from activities.
-            if (has_capability('moodle/course:ignoreavailabilityrestrictions', $context)
+            if (
+                has_capability('moodle/course:ignoreavailabilityrestrictions', $context)
                     || has_capability('block/smartsection_control:manage', $context)
-                    || has_capability('moodle/course:viewhiddensections', $context)) {
+                    || has_capability('moodle/course:viewhiddensections', $context)
+            ) {
                 return;
             }
 
@@ -234,11 +234,13 @@ function block_smartsection_control_before_http_headers(): void {
                 return;
             }
 
-            if (\block_smartsection_control\helper::is_section_locked_for_user(
-                $record,
-                $course,
-                (int) $USER->id
-            )) {
+            if (
+                \block_smartsection_control\helper::is_section_locked_for_user(
+                    $record,
+                    $course,
+                    (int) $USER->id
+                )
+            ) {
                 redirect(
                     new moodle_url('/course/view.php', ['id' => $courseid]),
                     get_string('section_locked_message', 'block_smartsection_control'),
@@ -251,48 +253,64 @@ function block_smartsection_control_before_http_headers(): void {
     }
 
     // -----------------------------------------------------------------------
-    // Role 2 — Soft-lock CSS injection on course view pages (presentation only).
+    // Role 2 — Soft-lock teaser styling on course view pages (presentation only).
     // Access control for Soft Lock schedule modes is Moodle availability JSON.
-    // -----------------------------------------------------------------------
     if (!empty($PAGE->course->id) && $PAGE->course->id > 1 && strpos($script, 'course-view') !== false) {
         $courseid = (int) $PAGE->course->id;
         $context  = context_course::instance($courseid);
 
-        if (!has_capability('block/smartsection_control:manage', $context)
-                && !has_capability('moodle/course:ignoreavailabilityrestrictions', $context)) {
+        if (
+            !has_capability('block/smartsection_control:manage', $context)
+                && !has_capability('moodle/course:ignoreavailabilityrestrictions', $context)
+        ) {
             $course  = get_course($courseid);
             $records = $DB->get_records('block_smartsection_control', [
                 'courseid' => $courseid,
                 'locktype' => 'soft',
             ]);
 
-            $selectors = [];
+            // Section numbers come from the already-cached course modinfo, so no
+            // per-section course_sections query is issued here.
+            $sectionnumbers = [];
+            if (!empty($records)) {
+                foreach (get_fast_modinfo($courseid)->get_section_info_all() as $sectioninfo) {
+                    $sectionnumbers[(int) $sectioninfo->id] = (int) $sectioninfo->section;
+                }
+            }
+
+            $lockedsections = [];
             foreach ($records as $record) {
                 // Soft Lock + completion is not supported (coerced to hard elsewhere).
                 if (($record->unlocktype ?? '') === 'event') {
                     continue;
                 }
-                if (!\block_smartsection_control\helper::is_section_locked_for_user(
-                    $record,
-                    $course,
-                    (int) $USER->id
-                )) {
+                $sectionid = (int) $record->sectionid;
+                if (!isset($sectionnumbers[$sectionid])) {
                     continue;
                 }
-                $sectionrec = $DB->get_record('course_sections', ['id' => $record->sectionid], 'id, section');
-                if ($sectionrec) {
-                    $sectionnum = (int) $sectionrec->section;
-                    $selectors[] = "#section-{$sectionnum}";
-                    $selectors[] = "li#section-{$sectionnum}";
-                    $selectors[] = "[data-sectionid='{$record->sectionid}']";
-                    $selectors[] = "[data-sectionreturnid='{$sectionnum}']";
+                if (
+                    !\block_smartsection_control\helper::is_section_locked_for_user(
+                        $record,
+                        $course,
+                        (int) $USER->id
+                    )
+                ) {
+                    continue;
                 }
+                $lockedsections[] = [
+                    'sectionid'  => $sectionid,
+                    'sectionnum' => $sectionnumbers[$sectionid],
+                ];
             }
 
-            if (!empty($selectors)) {
-                $cssrule = implode(', ', $selectors) . ' { opacity: 0.5 !important; pointer-events: none !important; user-select: none !important; }';
-                $jscode = "(function(){var s=document.createElement('style');s.setAttribute('data-plugin','block_smartsection_control');s.textContent=" . json_encode($cssrule) . ";document.head.appendChild(s);})();";
-                $PAGE->requires->js_init_code($jscode);
+            if (!empty($lockedsections)) {
+                // The AMD module tags the matching section elements with the
+                // ssc-softlock class; the teaser appearance itself lives in styles.css.
+                $PAGE->requires->js_call_amd(
+                    'block_smartsection_control/softlock',
+                    'init',
+                    [$lockedsections]
+                );
             }
         }
     }
@@ -330,51 +348,30 @@ function block_smartsection_control_check_sections_visibility(): array {
 
     // -------------------------------------------------------------------
     // Garbage collection: delete records for deleted courses or sections.
-    // -------------------------------------------------------------------
 
-    // Count before so we can report how many were removed.
-    $stats['orphaned_rules'] = (int) $DB->count_records_sql(
-        "SELECT COUNT(*) FROM {block_smartsection_control}
-          WHERE courseid NOT IN (SELECT id FROM {course})
-             OR sectionid NOT IN (SELECT id FROM {course_sections})"
-    );
-    if ($stats['orphaned_rules'] > 0) {
-        $DB->execute("
-            DELETE FROM {block_smartsection_control}
-             WHERE courseid NOT IN (SELECT id FROM {course})
-                OR sectionid NOT IN (SELECT id FROM {course_sections})
-        ");
-    }
+    // Shared orphan predicate. Correlated NOT IN subselects against {course} and
+    // {course_sections} are portable across all supported Moodle DB engines and
+    // take no bound parameters, so the same fragment drives both the count and
+    // the delete through the specialized DML methods below.
+    $orphanselect = 'courseid NOT IN (SELECT id FROM {course})
+                     OR sectionid NOT IN (SELECT id FROM {course_sections})';
 
-    $stats['orphaned_history'] = (int) $DB->count_records_sql(
-        "SELECT COUNT(*) FROM {block_smartsection_control_h}
-          WHERE courseid NOT IN (SELECT id FROM {course})
-             OR sectionid NOT IN (SELECT id FROM {course_sections})"
-    );
-    if ($stats['orphaned_history'] > 0) {
-        $DB->execute("
-            DELETE FROM {block_smartsection_control_h}
-             WHERE courseid NOT IN (SELECT id FROM {course})
-                OR sectionid NOT IN (SELECT id FROM {course_sections})
-        ");
-    }
+    $orphantables = [
+        'orphaned_rules'   => 'block_smartsection_control',
+        'orphaned_history' => 'block_smartsection_control_h',
+        'orphaned_pacing'  => 'block_smartsection_control_u',
+    ];
 
-    $stats['orphaned_pacing'] = (int) $DB->count_records_sql(
-        "SELECT COUNT(*) FROM {block_smartsection_control_u}
-          WHERE courseid NOT IN (SELECT id FROM {course})
-             OR sectionid NOT IN (SELECT id FROM {course_sections})"
-    );
-    if ($stats['orphaned_pacing'] > 0) {
-        $DB->execute("
-            DELETE FROM {block_smartsection_control_u}
-             WHERE courseid NOT IN (SELECT id FROM {course})
-                OR sectionid NOT IN (SELECT id FROM {course_sections})
-        ");
+    foreach ($orphantables as $statkey => $table) {
+        // Count before deleting so the task can report how many rows were removed.
+        $stats[$statkey] = (int) $DB->count_records_select($table, $orphanselect);
+        if ($stats[$statkey] > 0) {
+            $DB->delete_records_select($table, $orphanselect);
+        }
     }
 
     // -------------------------------------------------------------------
     // Visibility enforcement sweep (shared state mutations live here, not on page views).
-    // -------------------------------------------------------------------
     $lockfactory = \core\lock\lock_config::get_lock_factory('block_smartsection_control');
     $records = $DB->get_records_select(
         'block_smartsection_control',
@@ -547,12 +544,18 @@ function block_smartsection_control_manual_unlock(int $sectionid, int $courseid,
 function block_smartsection_control_reset_course_form_definition(MoodleQuickForm &$mform): void {
     $mform->addElement('header', 'smartsectioncontrolheader', get_string('pluginname', 'block_smartsection_control'));
 
-    $mform->addElement('checkbox', 'reset_smartsection_history',
-        get_string('reset_history', 'block_smartsection_control'));
+    $mform->addElement(
+        'checkbox',
+        'reset_smartsection_history',
+        get_string('reset_history', 'block_smartsection_control')
+    );
     $mform->addHelpButton('reset_smartsection_history', 'reset_history', 'block_smartsection_control');
 
-    $mform->addElement('checkbox', 'reset_smartsection_pacing',
-        get_string('reset_pacing', 'block_smartsection_control'));
+    $mform->addElement(
+        'checkbox',
+        'reset_smartsection_pacing',
+        get_string('reset_pacing', 'block_smartsection_control')
+    );
     $mform->addHelpButton('reset_smartsection_pacing', 'reset_pacing', 'block_smartsection_control');
 }
 

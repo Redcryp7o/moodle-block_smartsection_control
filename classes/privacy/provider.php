@@ -1,6 +1,5 @@
 <?php
-declare(strict_types=1);
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@ declare(strict_types=1);
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Privacy subsystem implementation for the SmartSection Control block.
@@ -23,12 +22,12 @@ declare(strict_types=1);
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace block_smartsection_control\privacy;
+declare(strict_types=1);
 
-defined('MOODLE_INTERNAL') || die();
+namespace block_smartsection_control\privacy;
 
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
@@ -45,14 +44,12 @@ use core_privacy\local\request\userlist;
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
     \core_privacy\local\metadata\provider,
-    \core_privacy\local\request\plugin\provider,
-    \core_privacy\local\request\core_userlist_provider
-{
-
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
     /**
      * Describe the types of personal data stored by this plugin.
      *
@@ -198,7 +195,7 @@ class provider implements
             return;
         }
 
-        $DB->delete_records('block_smartsection_control_u',    ['courseid' => $context->instanceid]);
+        $DB->delete_records('block_smartsection_control_u', ['courseid' => $context->instanceid]);
         $DB->delete_records('block_smartsection_control_h', ['courseid' => $context->instanceid]);
     }
 
@@ -216,7 +213,7 @@ class provider implements
             if ($context->contextlevel != CONTEXT_COURSE) {
                 continue;
             }
-            $DB->delete_records('block_smartsection_control_u',    ['courseid' => $context->instanceid, 'userid' => $user->id]);
+            $DB->delete_records('block_smartsection_control_u', ['courseid' => $context->instanceid, 'userid' => $user->id]);
             $DB->delete_records('block_smartsection_control_h', ['courseid' => $context->instanceid, 'triggered_by' => $user->id]);
         }
     }
@@ -242,11 +239,17 @@ class provider implements
         [$usersql, $userparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
 
         $params1 = ['courseid' => $context->instanceid] + $userparams;
-        $DB->delete_records_select('block_smartsection_control_u',
-            "courseid = :courseid AND userid {$usersql}", $params1);
+        $DB->delete_records_select(
+            'block_smartsection_control_u',
+            "courseid = :courseid AND userid {$usersql}",
+            $params1
+        );
 
         $params2 = ['courseid' => $context->instanceid] + $userparams;
-        $DB->delete_records_select('block_smartsection_control_h',
-            "courseid = :courseid AND triggered_by {$usersql}", $params2);
+        $DB->delete_records_select(
+            'block_smartsection_control_h',
+            "courseid = :courseid AND triggered_by {$usersql}",
+            $params2
+        );
     }
 }

@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Backup task for block_smartsection_control.
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -28,9 +28,12 @@ require_once($CFG->dirroot . '/blocks/smartsection_control/backup/moodle2/backup
 
 /**
  * Specialised backup task for block_smartsection_control.
+ *
+ * @package    block_smartsection_control
+ * @copyright  2026 M. AFZAL RIAZ
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_smartsection_control_block_task extends backup_block_task {
-
     /**
      * Define particular settings this block can have.
      */
@@ -49,6 +52,8 @@ class backup_smartsection_control_block_task extends backup_block_task {
     }
 
     /**
+     * Return the block file areas to include in the backup.
+     *
      * @return array
      */
     public function get_fileareas() {
@@ -56,6 +61,8 @@ class backup_smartsection_control_block_task extends backup_block_task {
     }
 
     /**
+     * Return the block configdata attributes that hold encoded links.
+     *
      * @return array
      */
     public function get_configdata_encoded_attributes() {
@@ -63,6 +70,8 @@ class backup_smartsection_control_block_task extends backup_block_task {
     }
 
     /**
+     * Encode links to this block's pages so they survive a restore.
+     *
      * @param string $content
      * @return string
      */

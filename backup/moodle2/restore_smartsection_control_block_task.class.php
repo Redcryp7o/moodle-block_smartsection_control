@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Restore task for block_smartsection_control.
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -28,9 +28,12 @@ require_once($CFG->dirroot . '/blocks/smartsection_control/backup/moodle2/restor
 
 /**
  * Specialised restore task for block_smartsection_control.
+ *
+ * @package    block_smartsection_control
+ * @copyright  2026 M. AFZAL RIAZ
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_smartsection_control_block_task extends restore_block_task {
-
     /**
      * Define particular settings this block can have.
      */
@@ -49,6 +52,8 @@ class restore_smartsection_control_block_task extends restore_block_task {
     }
 
     /**
+     * Return the block file areas to restore.
+     *
      * @return array
      */
     public function get_fileareas() {
@@ -56,6 +61,8 @@ class restore_smartsection_control_block_task extends restore_block_task {
     }
 
     /**
+     * Return the block configdata attributes that hold encoded links.
+     *
      * @return array
      */
     public function get_configdata_encoded_attributes() {
@@ -80,7 +87,7 @@ class restore_smartsection_control_block_task extends restore_block_task {
                 continue;
             }
 
-            $mapper = function(int $oldcmid): int {
+            $mapper = function (int $oldcmid): int {
                 return (int) $this->get_mappingid('course_module', $oldcmid, 0);
             };
 
@@ -116,6 +123,8 @@ class restore_smartsection_control_block_task extends restore_block_task {
     }
 
     /**
+     * Define the content areas that need link decoding after restore.
+     *
      * @return array
      */
     public static function define_decode_contents() {
@@ -123,6 +132,8 @@ class restore_smartsection_control_block_task extends restore_block_task {
     }
 
     /**
+     * Define the link decoding rules applied after restore.
+     *
      * @return array
      */
     public static function define_decode_rules() {

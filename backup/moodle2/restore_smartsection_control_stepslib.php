@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,23 +12,24 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Restore structure step for block_smartsection_control.
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Restore course-scoped section unlock rules (configuration only).
+ *
+ * @package    block_smartsection_control
+ * @copyright  2026 M. AFZAL RIAZ
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_smartsection_control_block_structure_step extends restore_structure_step {
-
     /**
      * Define paths processed by this step.
      *

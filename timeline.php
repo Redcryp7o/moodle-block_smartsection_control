@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
  * Timeline Visualization Page
  *
@@ -6,7 +21,7 @@
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once(__DIR__ . '/../../config.php');
@@ -26,10 +41,6 @@ $PAGE->set_course($course);
 $PAGE->set_pagelayout('incourse');
 $PAGE->set_title(get_string('timeline_view', 'block_smartsection_control'));
 $PAGE->set_heading(format_string($course->fullname) . ' - ' . get_string('timeline_view', 'block_smartsection_control'));
-
-global $DB, $OUTPUT;
-
-$PAGE->requires->css('/blocks/smartsection_control/styles.css');
 
 $modinfo = get_fast_modinfo($course);
 $sections = $modinfo->get_section_info_all();
@@ -60,9 +71,11 @@ foreach ($sections as $section) {
     $eventconditions = [];
     if (($record->unlocktype ?? '') === 'event' && !empty($record->eventconditions)) {
         $eventconditions = json_decode($record->eventconditions, true);
-        if (is_array($eventconditions) && !empty($eventconditions['restore_needs_review'])
+        if (
+            is_array($eventconditions) && !empty($eventconditions['restore_needs_review'])
                 && empty($eventconditions['activity_completion'])
-                && empty($eventconditions['grade_threshold'])) {
+                && empty($eventconditions['grade_threshold'])
+        ) {
             $needsreview = true;
         }
     }
@@ -138,104 +151,46 @@ foreach ($sections as $section) {
     }
 }
 
-usort($unlockdata, static function(array $a, array $b): int {
+usort($unlockdata, static function (array $a, array $b): int {
     if ($a['sort'] !== $b['sort']) {
         return $a['sort'] <=> $b['sort'];
     }
     return $a['section'] <=> $b['section'];
 });
 
-echo $OUTPUT->header();
+// Build the template context: presentation markup lives in the Mustache template.
+$nodes = [];
+foreach ($unlockdata as $data) {
+    $isneedsreview = ($data['status'] === 'needsreview');
+    $nodes[] = [
+        'statusclass' => $isneedsreview ? 'scheduled' : $data['status'],
+        'statusmodifier' => 'ssc-status--' . ($isneedsreview ? 'warning' : $data['status']),
+        'statuslabel' => $isneedsreview
+            ? get_string('status_needs_review', 'block_smartsection_control')
+            : get_string($data['status'], 'block_smartsection_control'),
+        'name' => format_string($data['name']),
+        'metaline' => $data['metaline'],
+    ];
+}
 
-echo html_writer::start_div('ssc-page ssc-timeline ssc-ui');
-
-echo html_writer::start_tag('ul', ['class' => 'nav nav-tabs ssc-nav-tabs', 'role' => 'tablist']);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/manage.php', ['id' => $courseid]),
-        get_string('manage', 'block_smartsection_control'),
-        ['class' => 'nav-link']
+$templatedata = [
+    'tabs' => \block_smartsection_control\output\navigation::tabs(
+        $courseid,
+        \block_smartsection_control\output\navigation::TAB_TIMELINE
     ),
-    ['class' => 'nav-item']
-);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/timeline.php', ['id' => $courseid]),
-        get_string('timeline_view', 'block_smartsection_control'),
-        ['class' => 'nav-link active', 'aria-current' => 'page']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::tag('li',
-    html_writer::link(
-        new moodle_url('/blocks/smartsection_control/history.php', ['id' => $courseid]),
-        get_string('history_view', 'block_smartsection_control'),
-        ['class' => 'nav-link']
-    ),
-    ['class' => 'nav-item']
-);
-echo html_writer::end_tag('ul');
-
-echo html_writer::start_div('ssc-surface ssc-surface--primary ssc-manager ssc-timeline-surface');
-echo html_writer::start_div('ssc-surface-header ssc-manager-header');
-echo html_writer::tag('h2', get_string('timeline_view', 'block_smartsection_control'), ['class' => 'ssc-surface-title ssc-manager-title']);
-echo html_writer::tag('p', get_string('timeline_desc', 'block_smartsection_control'), ['class' => 'ssc-surface-desc ssc-manager-desc']);
-echo html_writer::end_div();
-
-$legenditems = [
-    ['class' => 'ssc-status-unlocked', 'label' => get_string('unlocked', 'block_smartsection_control')],
-    ['class' => 'ssc-status-scheduled', 'label' => get_string('scheduled', 'block_smartsection_control')],
-    ['class' => 'ssc-status-locked', 'label' => get_string('locked', 'block_smartsection_control')],
-    ['class' => 'ssc-status-warning', 'label' => get_string('status_needs_review', 'block_smartsection_control')],
+    'title' => get_string('timeline_view', 'block_smartsection_control'),
+    'description' => get_string('timeline_desc', 'block_smartsection_control'),
+    'legend' => [
+        ['dotclass' => 'ssc-status-unlocked', 'label' => get_string('unlocked', 'block_smartsection_control')],
+        ['dotclass' => 'ssc-status-scheduled', 'label' => get_string('scheduled', 'block_smartsection_control')],
+        ['dotclass' => 'ssc-status-locked', 'label' => get_string('locked', 'block_smartsection_control')],
+        ['dotclass' => 'ssc-status-warning', 'label' => get_string('status_needs_review', 'block_smartsection_control')],
+    ],
+    'hasnodes' => !empty($nodes),
+    'emptymessage' => get_string('no_timeline', 'block_smartsection_control'),
+    'nodes' => $nodes,
 ];
 
-echo html_writer::start_div('ssc-timeline-legend', ['role' => 'note']);
-foreach ($legenditems as $item) {
-    echo html_writer::start_span('ssc-legend-item');
-    echo html_writer::span('', 'ssc-status-dot ' . $item['class'], ['aria-hidden' => 'true']);
-    echo html_writer::span($item['label'], 'ssc-legend-label');
-    echo html_writer::end_span();
-}
-echo html_writer::end_div();
-
-if (empty($unlockdata)) {
-    echo html_writer::start_div('ssc-empty ssc-timeline-empty', ['role' => 'status']);
-    echo html_writer::div(
-        $OUTPUT->pix_icon('i/calendar', '', 'core', ['class' => 'icon', 'aria-hidden' => 'true']),
-        'ssc-empty-icon'
-    );
-    echo html_writer::tag('p', get_string('no_timeline', 'block_smartsection_control'), ['class' => 'ssc-empty-title']);
-    echo html_writer::end_div();
-    echo html_writer::end_div(); // surface
-    echo html_writer::end_div();
-    echo $OUTPUT->footer();
-    exit;
-}
-
-echo html_writer::start_div('ssc-roadmap', ['role' => 'list']);
-
-foreach ($unlockdata as $data) {
-    $statusclass = $data['status'] === 'needsreview' ? 'scheduled' : $data['status'];
-    $statuslabel = $data['status'] === 'needsreview'
-        ? get_string('status_needs_review', 'block_smartsection_control')
-        : get_string($data['status'], 'block_smartsection_control');
-    $statusmod = 'ssc-status--' . ($data['status'] === 'needsreview' ? 'warning' : $data['status']);
-
-    echo html_writer::start_div('ssc-roadmap-node ' . $statusclass, ['role' => 'listitem']);
-    echo html_writer::div('', 'ssc-roadmap-marker', ['aria-hidden' => 'true']);
-
-    echo html_writer::start_div('ssc-roadmap-content');
-    echo html_writer::start_div('ssc-roadmap-main');
-    echo html_writer::tag('h3', format_string($data['name']), ['class' => 'ssc-roadmap-title']);
-    echo html_writer::tag('p', s($data['metaline']), ['class' => 'ssc-roadmap-meta']);
-    echo html_writer::end_div();
-
-    echo html_writer::span($statuslabel, 'ssc-status ' . $statusmod);
-    echo html_writer::end_div();
-    echo html_writer::end_div();
-}
-
-echo html_writer::end_div();
-echo html_writer::end_div(); // surface
-echo html_writer::end_div();
+echo $OUTPUT->header();
+echo $OUTPUT->render_from_template('block_smartsection_control/timeline_page', $templatedata);
 echo $OUTPUT->footer();

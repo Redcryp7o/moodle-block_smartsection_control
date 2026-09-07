@@ -1,6 +1,5 @@
 <?php
-declare(strict_types=1);
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@ declare(strict_types=1);
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Scheduled task: send instructor notifications for upcoming section unlocks.
@@ -24,22 +23,21 @@ declare(strict_types=1);
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace block_smartsection_control\task;
+declare(strict_types=1);
 
-defined('MOODLE_INTERNAL') || die();
+namespace block_smartsection_control\task;
 
 /**
  * Notification task for SmartSection Control.
  *
  * @package    block_smartsection_control
  * @copyright  2026 M. AFZAL RIAZ
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class send_notifications extends \core\task\scheduled_task {
-
     /**
      * Return the localised task name displayed in the Moodle admin interface.
      *
@@ -92,9 +90,11 @@ class send_notifications extends \core\task\scheduled_task {
             try {
                 // Re-read under lock to avoid duplicate sends from overlapping cron.
                 $fresh = $DB->get_record('block_smartsection_control', ['id' => $record->id]);
-                if (!$fresh
+                if (
+                    !$fresh
                         || (int) $fresh->unlocktime !== (int) $record->unlocktime
-                        || (int) ($fresh->notifysentfor ?? 0) === (int) $fresh->unlocktime) {
+                        || (int) ($fresh->notifysentfor ?? 0) === (int) $fresh->unlocktime
+                ) {
                     continue;
                 }
 
@@ -179,6 +179,8 @@ class send_notifications extends \core\task\scheduled_task {
         bool $haswarning,
         string $warningtext
     ): void {
+        global $OUTPUT;
+
         $subject  = get_string('notification_unlock_soon_subject', 'block_smartsection_control', $sectionname);
         $bodytext = get_string('notification_unlock_soon_body', 'block_smartsection_control', (object) [
             'section' => $sectionname,
@@ -188,6 +190,7 @@ class send_notifications extends \core\task\scheduled_task {
 
         // Build signed delay-link URLs for 1, 2, and 3 day delays.
         $delayurls = [];
+        $delaylinks = [];
         for ($days = 1; $days <= 3; $days++) {
             $token            = \block_smartsection_control\helper::generate_delay_token(
                 (int) $instructor->id,
@@ -203,37 +206,33 @@ class send_notifications extends \core\task\scheduled_task {
                 'token'        => $token,
             ]);
             $delayurls[$days] = $url->out(false);
+            $delaylinks[]     = [
+                'url'   => $delayurls[$days],
+                'label' => get_string('delay_x_days', 'block_smartsection_control', $days),
+            ];
         }
+
+        $delayheading = get_string('delay_section_unlock', 'block_smartsection_control');
 
         // Plain-text body.
         $plainbody  = $bodytext . "\n\n";
         if ($haswarning) {
             $plainbody .= $warningtext . "\n\n";
         }
-        $plainbody .= get_string('delay_section_unlock', 'block_smartsection_control') . "\n";
+        $plainbody .= $delayheading . "\n";
         for ($days = 1; $days <= 3; $days++) {
             $plainbody .= '- ' . get_string('delay_x_days', 'block_smartsection_control', $days) . ': ' . $delayurls[$days] . "\n";
         }
 
-        // HTML body.
-        $htmlbody = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;">';
-        $htmlbody .= '<h2 style="color:#1a73e8;margin-top:0;">' . s($subject) . '</h2>';
-        $htmlbody .= '<p style="color:#3c4043;font-size:16px;line-height:1.5;">' . s($bodytext) . '</p>';
-
-        if ($haswarning) {
-            $htmlbody .= '<div style="background:#fce8e6;border-left:4px solid #d93025;padding:15px;margin:20px 0;border-radius:4px;color:#a51d24;font-weight:bold;">';
-            $htmlbody .= s($warningtext);
-            $htmlbody .= '</div>';
-        }
-
-        $htmlbody .= '<div style="margin:25px 0 10px 0;border-top:1px solid #e0e0e0;padding-top:20px;">';
-        $htmlbody .= '<p style="color:#5f6368;font-weight:bold;margin-bottom:15px;">' . s(get_string('delay_section_unlock', 'block_smartsection_control')) . '</p>';
-        $htmlbody .= '<div style="display:flex;gap:10px;">';
-        for ($days = 1; $days <= 3; $days++) {
-            $label     = get_string('delay_x_days', 'block_smartsection_control', $days);
-            $htmlbody .= '<a href="' . $delayurls[$days] . '" style="display:inline-block;padding:10px 15px;background:#1a73e8;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">' . s($label) . '</a> ';
-        }
-        $htmlbody .= '</div></div></div>';
+        // HTML body is rendered from a Mustache template, which also escapes it.
+        $htmlbody = $OUTPUT->render_from_template('block_smartsection_control/notification_email', [
+            'subject'      => $subject,
+            'body'         => $bodytext,
+            'haswarning'   => $haswarning,
+            'warningtext'  => $warningtext,
+            'delayheading' => $delayheading,
+            'delaylinks'   => $delaylinks,
+        ]);
 
         $message                      = new \core\message\message();
         $message->component           = 'block_smartsection_control';

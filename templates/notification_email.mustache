@@ -1,0 +1,65 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_smartsection_control/notification_email
+
+    HTML body of the upcoming-release notification sent to course instructors.
+
+    Email clients cannot load the plugin stylesheet, so presentation is carried
+    by inline style attributes. That is intentional and specific to email output.
+
+    Context variables required for this template:
+    * subject - notification subject line
+    * body - notification body sentence
+    * haswarning - true when the pacing-guard warning should be shown
+    * warningtext - localised pacing warning
+    * delayheading - localised heading above the deferral buttons
+    * delaylinks - array of deferral actions
+      * url - signed deferral URL
+      * label - localised button label
+
+    Example context (json):
+    {
+        "subject": "Section \"Week 2\" will become available soon",
+        "body": "The section \"Week 2\" in course \"Biology\" is scheduled to become available on 1 October 2026.",
+        "haswarning": false,
+        "warningtext": "",
+        "delayheading": "Defer section release:",
+        "delaylinks": [
+            {"url": "https://example.com/manage.php?delaysection=45", "label": "Defer by 1 day(s)"}
+        ]
+    }
+
+    @package    block_smartsection_control
+    @copyright  2026 M. AFZAL RIAZ
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;">
+    <h2 style="color:#1a73e8;margin-top:0;">{{subject}}</h2>
+    <p style="color:#3c4043;font-size:16px;line-height:1.5;">{{body}}</p>
+    {{#haswarning}}
+    <div style="background:#fce8e6;border-left:4px solid #d93025;padding:15px;margin:20px 0;border-radius:4px;color:#a51d24;font-weight:bold;">{{warningtext}}</div>
+    {{/haswarning}}
+    <div style="margin:25px 0 10px 0;border-top:1px solid #e0e0e0;padding-top:20px;">
+        <p style="color:#5f6368;font-weight:bold;margin-bottom:15px;">{{delayheading}}</p>
+        <div style="display:flex;gap:10px;">
+            {{#delaylinks}}
+            <a href="{{url}}" style="display:inline-block;padding:10px 15px;background:#1a73e8;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">{{label}}</a>
+            {{/delaylinks}}
+        </div>
+    </div>
+</div>
