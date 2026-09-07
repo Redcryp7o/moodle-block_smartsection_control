@@ -11,7 +11,6 @@ Desktop.ini
 *.code-workspace
 
 # Secrets / local env
-.github
 .env
 .env.*
 *.pem
