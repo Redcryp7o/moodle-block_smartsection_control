@@ -50,21 +50,14 @@ class renderer extends \plugin_renderer_base {
     /**
      * Render the student-facing block content from a dashboard widget.
      *
-     * The countdown behaviour is initialised through js_call_amd() rather than a
-     * {{#js}} block inside the template, so the module is requested through
-     * Moodle's standard AMD loading pipeline.
+     * The countdown AMD module is initialised from the Mustache {{#js}} block
+     * so it uses the same {{uniqid}} helper as the widget container element.
      *
      * @param dashboard_widget $widget The exportable widget containing upcoming unlocks.
      * @return string Rendered HTML string.
      */
     public function render_block_content(dashboard_widget $widget): string {
         $data = $widget->export_for_template($this);
-
-        $this->page->requires->js_call_amd(
-            'block_smartsection_control/student_widget',
-            'init',
-            [$data['uniqid']]
-        );
 
         return $this->render_from_template('block_smartsection_control/student_timeline', $data);
     }

@@ -38,9 +38,9 @@
 define([], function() {
     'use strict';
 
-    var SECS_PER_DAY  = 86400;
+    var SECS_PER_DAY = 86400;
     var SECS_PER_HOUR = 3600;
-    var SECS_PER_MIN  = 60;
+    var SECS_PER_MIN = 60;
 
     /**
      * Format remaining seconds into compact countdown text.
@@ -58,12 +58,14 @@ define([], function() {
             return '0s';
         }
 
-        var days  = Math.floor(totalSeconds / SECS_PER_DAY);
+        var days = Math.floor(totalSeconds / SECS_PER_DAY);
         var hours = Math.floor((totalSeconds % SECS_PER_DAY) / SECS_PER_HOUR);
-        var mins  = Math.floor((totalSeconds % SECS_PER_HOUR) / SECS_PER_MIN);
-        var secs  = totalSeconds % SECS_PER_MIN;
+        var mins = Math.floor((totalSeconds % SECS_PER_HOUR) / SECS_PER_MIN);
+        var secs = totalSeconds % SECS_PER_MIN;
 
-        var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+        var pad = function(n) {
+            return n < 10 ? '0' + n : '' + n;
+        };
 
         if (days >= 1) {
             return days + 'd ' + pad(hours) + 'h ' + pad(mins) + 'm';
@@ -95,17 +97,36 @@ define([], function() {
             .replace(/'/g, '&#039;');
     }
 
+    /** @type {Object<string, function>} Stop callbacks for live widgets, keyed by root id. */
+    var activeWidgets = {};
+
+    /**
+     * Unix seconds using the server timestamp as the origin, plus elapsed
+     * client time since this widget was initialised.
+     *
+     * @param {number} serverNow Unix timestamp from the server render.
+     * @param {number} clientCapturedAt Date.now() at init.
+     * @return {number}
+     */
+    function nowUnix(serverNow, clientCapturedAt) {
+        if (!serverNow) {
+            return Math.floor(Date.now() / 1000);
+        }
+        return serverNow + Math.floor((Date.now() - clientCapturedAt) / 1000);
+    }
+
     /**
      * Build the inner HTML string for a queued item's <li>.
      *
      * @param {Object} item       Queued section data object.
      * @param {string} nextLabel  Translated "Next" badge label.
      * @param {boolean} isNext    Whether this item is the new first (imminent).
+     * @param {number} nowSec     Current unix time aligned to the server clock.
      * @return {string}
      */
-    function buildItemHtml(item, nextLabel, isNext) {
-        var diff      = Math.max(0, item.unlocktime - Math.floor(Date.now() / 1000));
-        var isSoon    = diff > 0 && diff < SECS_PER_DAY;
+    function buildItemHtml(item, nextLabel, isNext, nowSec) {
+        var diff = Math.max(0, item.unlocktime - nowSec);
+        var isSoon = diff > 0 && diff < SECS_PER_DAY;
         var countdown = formatCountdown(diff);
 
         var badgeHtml = isNext
@@ -119,7 +140,7 @@ define([], function() {
             : '';
 
         var unlockLabel = item.unlocksinlabel || '';
-        var ariaLabel   = unlockLabel ? unlockLabel + ': ' + countdown : countdown;
+        var ariaLabel = unlockLabel ? unlockLabel + ': ' + countdown : countdown;
 
         return '<div class="ssc-upcoming__row ssc-upcoming__row--title">'
             + '<span class="ssc-upcoming__section-name">' + esc(item.sectionname) + '</span>'
@@ -147,14 +168,30 @@ define([], function() {
     function init(rootId) {
         var container = document.getElementById(rootId);
         if (!container) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    init(rootId);
+                });
+            }
             return;
         }
 
-        var listEl    = container.querySelector('.ssc-upcoming__list');
-        var emptyEl   = container.querySelector('.ssc-upcoming__empty');
+        if (Object.prototype.hasOwnProperty.call(activeWidgets, rootId)) {
+            activeWidgets[rootId]();
+            delete activeWidgets[rootId];
+        }
+
+        var listEl = container.querySelector('.ssc-upcoming__list');
+        var emptyEl = container.querySelector('.ssc-upcoming__empty');
         var announceEl = container.querySelector('.ssc-upcoming__announce');
-        var nextLabel  = container.getAttribute('data-next-label') || 'Next';
-        var queue      = [];
+        var nextLabel = container.getAttribute('data-next-label') || 'Next';
+        var serverNow = parseInt(container.getAttribute('data-servernow'), 10);
+        var clientCapturedAt = Date.now();
+        var queue = [];
+
+        if (isNaN(serverNow) || serverNow <= 0) {
+            serverNow = 0;
+        }
 
         try {
             var raw = container.getAttribute('data-queued');
@@ -193,7 +230,7 @@ define([], function() {
                 return;
             }
 
-            var now     = Math.floor(Date.now() / 1000);
+            var now = nowUnix(serverNow, clientCapturedAt);
             var expired = [];
 
             timers.forEach(function(timerEl) {
@@ -221,28 +258,30 @@ define([], function() {
                 }
             });
 
-            expired.forEach(function(li) { expireItem(li); });
+            expired.forEach(function(li) {
+                expireItem(li);
+            });
         }
 
         /**
          * Second-level tick: only updates items that are < 24h away.
          */
         function secondTick() {
-            if (!isAlive()) { stopAll(); return; }
-            var timers = container.querySelectorAll(
-                '.ssc-upcoming__item--soon .ssc-upcoming__timer, '
-                + '.ssc-upcoming__item--next .ssc-upcoming__timer'
-            );
-            // Also pick up the overall nearest item even if --soon not yet set.
-            var allTimers = container.querySelectorAll('.ssc-upcoming__timer');
-            tickTimers(allTimers.length ? allTimers : timers);
+            if (!isAlive()) {
+                stopAll();
+                return;
+            }
+            tickTimers(container.querySelectorAll('.ssc-upcoming__timer'));
         }
 
         /**
          * Minute-level tick: updates distant items (>= 24h).
          */
         function minuteTick() {
-            if (!isAlive()) { stopAll(); return; }
+            if (!isAlive()) {
+                stopAll();
+                return;
+            }
             var timers = container.querySelectorAll('.ssc-upcoming__timer');
             tickTimers(timers);
         }
@@ -251,8 +290,17 @@ define([], function() {
          * Clear both tick intervals so no timers keep running for a dead widget.
          */
         function stopAll() {
-            if (secondInterval) { clearInterval(secondInterval); secondInterval = null; }
-            if (minuteInterval) { clearInterval(minuteInterval); minuteInterval = null; }
+            if (secondInterval) {
+                clearInterval(secondInterval);
+                secondInterval = null;
+            }
+            if (minuteInterval) {
+                clearInterval(minuteInterval);
+                minuteInterval = null;
+            }
+            if (Object.prototype.hasOwnProperty.call(activeWidgets, rootId)) {
+                delete activeWidgets[rootId];
+            }
         }
 
         // ──────────────────────────────────────────────────────────────────────
@@ -291,6 +339,9 @@ define([], function() {
 
                 refreshIndices();
                 checkEmpty();
+                if (!listEl || listEl.querySelectorAll('.ssc-upcoming__timer').length === 0) {
+                    stopAll();
+                }
             }, 200);
         }
 
@@ -307,7 +358,7 @@ define([], function() {
             li.className = 'ssc-upcoming__item ssc-upcoming__item--entering';
             li.setAttribute('data-sectionid', item.sectionid);
             li.setAttribute('role', 'listitem');
-            li.innerHTML = buildItemHtml(item, nextLabel, false);
+            li.innerHTML = buildItemHtml(item, nextLabel, false, nowUnix(serverNow, clientCapturedAt));
             listEl.appendChild(li);
         }
 
@@ -361,16 +412,26 @@ define([], function() {
         // ──────────────────────────────────────────────────────────────────────
 
         // Initial render: check issoon for all visible items on load.
-        var now = Math.floor(Date.now() / 1000);
+        var now = nowUnix(serverNow, clientCapturedAt);
         container.querySelectorAll('.ssc-upcoming__timer').forEach(function(timerEl) {
             var unlockTime = parseInt(timerEl.getAttribute('data-unlocktime'), 10);
-            if (isNaN(unlockTime)) { return; }
+            if (isNaN(unlockTime)) {
+                return;
+            }
             var diff = unlockTime - now;
             if (diff > 0 && diff < SECS_PER_DAY) {
                 var item = timerEl.closest('.ssc-upcoming__item');
-                if (item) { item.classList.add('ssc-upcoming__item--soon'); }
+                if (item) {
+                    item.classList.add('ssc-upcoming__item--soon');
+                }
             }
         });
+
+        if (!container.querySelector('.ssc-upcoming__timer') && queue.length === 0) {
+            return;
+        }
+
+        activeWidgets[rootId] = stopAll;
 
         // Second-level tick for items that are < 24h away.
         secondInterval = setInterval(secondTick, 1000);
@@ -378,7 +439,7 @@ define([], function() {
         // Minute-level tick for all items (ensures distant ones stay accurate).
         minuteInterval = setInterval(minuteTick, 60000);
 
-        // Run both immediately so display is correct on page load.
+        // Run immediately so display is correct on page load.
         secondTick();
     }
 

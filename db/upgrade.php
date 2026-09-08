@@ -291,5 +291,54 @@ function xmldb_block_smartsection_control_upgrade(int $oldversion): bool {
         upgrade_block_savepoint(true, 2026082301, 'smartsection_control');
     }
 
+    // -----------------------------------------------------------------------
+    // Version 2026090801 — Soft Lock must not hide the section.
+    // Plugin-owned availability markers were written with showc = false, which
+    // makes Moodle omit the section entirely instead of showing the restriction.
+    // Rewrite existing markers so Soft Locked sections stay visible.
+    if ($oldversion < 2026090801) {
+        $marker = \block_smartsection_control\helper::AVAILABILITY_MARKER;
+
+        $sql = "SELECT DISTINCT cs.id, cs.course, cs.availability
+                  FROM {course_sections} cs
+                  JOIN {block_smartsection_control} bsc ON bsc.sectionid = cs.id
+                 WHERE bsc.locktype = 'soft'";
+
+        $dirtycourses = [];
+        foreach ($DB->get_records_sql($sql) as $section) {
+            if (empty($section->availability)) {
+                continue;
+            }
+
+            $tree = json_decode($section->availability, true);
+            if (!is_array($tree) || empty($tree['c']) || !is_array($tree['c'])) {
+                continue;
+            }
+
+            // The plugin only ever appends its marker to the top-level condition list.
+            $unlocktime = null;
+            foreach ($tree['c'] as $condition) {
+                if (is_array($condition) && !empty($condition[$marker])) {
+                    $unlocktime = (int) ($condition['t'] ?? 0);
+                    break;
+                }
+            }
+
+            if (!$unlocktime) {
+                continue;
+            }
+
+            if (\block_smartsection_control\helper::apply_soft_lock_availability((int) $section->id, $unlocktime)) {
+                $dirtycourses[(int) $section->course] = true;
+            }
+        }
+
+        foreach (array_keys($dirtycourses) as $courseid) {
+            rebuild_course_cache($courseid, true);
+        }
+
+        upgrade_block_savepoint(true, 2026090801, 'smartsection_control');
+    }
+
     return true;
 }

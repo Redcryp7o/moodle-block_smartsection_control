@@ -25,7 +25,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define([], function() {
+define(['core/notification', 'core/str'], function(Notification, Str) {
     'use strict';
 
     /**
@@ -92,14 +92,35 @@ define([], function() {
      * Replaces the inline onclick attributes previously emitted by manage.php.
      * The message text is a server-rendered language string held in the data
      * attribute, so no user-facing string is defined here.
+     *
+     * Uses Moodle's save/cancel modal instead of window.confirm(). On confirm,
+     * the original click is replayed so submit buttons still post their name
+     * and value. Cancel leaves the form unsubmitted.
      */
     function registerConfirmations() {
         document.querySelectorAll('[data-ssc-confirm]').forEach(function(trigger) {
             trigger.addEventListener('click', function(event) {
                 var message = trigger.getAttribute('data-ssc-confirm');
-                if (message && !window.confirm(message)) {
-                    event.preventDefault();
+                if (!message) {
+                    return;
                 }
+                if (trigger.getAttribute('data-ssc-confirmed') === '1') {
+                    trigger.removeAttribute('data-ssc-confirmed');
+                    return;
+                }
+                event.preventDefault();
+                Notification.saveCancelPromise(
+                    Str.get_string('confirm', 'core'),
+                    message,
+                    Str.get_string('ok', 'core'),
+                    {triggerElement: trigger}
+                ).then(function() {
+                    trigger.setAttribute('data-ssc-confirmed', '1');
+                    trigger.click();
+                    return;
+                }).catch(function() {
+                    return;
+                });
             });
         });
     }

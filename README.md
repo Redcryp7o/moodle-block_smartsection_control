@@ -267,9 +267,11 @@ blocks/smartsection_control/
 ├── amd/
 │   ├── build/
 │   │   ├── manage.min.js
+│   │   ├── softlock.min.js
 │   │   └── student_widget.min.js
 │   └── src/
 │       ├── manage.js
+│       ├── softlock.js
 │       └── student_widget.js
 ├── backup/
 │   └── moodle2/

@@ -766,6 +766,8 @@ class helper {
      * Merge Soft Lock date restriction into existing section availability JSON.
      *
      * Preserves all non-plugin Moodle restrictions (group, grade, completion, etc.).
+     * The Soft Lock date condition uses showc=true so the section stays visible
+     * while access remains restricted until the unlock time.
      *
      * @param string|null $json       Existing course_sections.availability JSON.
      * @param int         $unlocktime Unix timestamp when access becomes allowed.
@@ -782,11 +784,13 @@ class helper {
         $tree = self::decode_availability_tree($json);
         $tree = self::strip_ssc_from_tree($tree, $unlocktime);
 
+        // Keep the section visible with Moodle's restriction message (showc true).
+        // A false showc value would hide the section from students (same outcome as Hard Lock).
         if ($tree === null) {
             $tree = [
                 'op' => '&',
                 'c' => [$ssccondition],
-                'showc' => [false],
+                'showc' => [true],
             ];
         } else if (($tree['op'] ?? '&') === '&') {
             $tree['c'][] = $ssccondition;
@@ -796,12 +800,12 @@ class helper {
             while (count($tree['showc']) < count($tree['c']) - 1) {
                 $tree['showc'][] = true;
             }
-            $tree['showc'][] = false;
+            $tree['showc'][] = true;
         } else {
             $tree = [
                 'op' => '&',
                 'c' => [$tree, $ssccondition],
-                'showc' => [true, false],
+                'showc' => [true, true],
             ];
         }
 

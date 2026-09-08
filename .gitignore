@@ -30,6 +30,9 @@ dist/
 
 scripts/
 
+# Local QA runner (hardcoded developer machine paths)
+qa.bat
+
 # Logs / temp
 *.log
 *.tmp

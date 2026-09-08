@@ -270,7 +270,7 @@ class dashboard_widget implements \renderable, \templatable {
         }
 
         $data = [
-            'uniqid'         => \html_writer::random_id('ssc_widget_'),
+            'servernow'      => $now,
             'nextlabel'      => $nextlabel,
             'unlocksinlabel' => $unlocksinlabel,
             'isstudent'      => $this->isstudent,
